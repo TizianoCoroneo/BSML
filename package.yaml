@@ -1,8 +1,8 @@
-name: report
+name: bsmlcheck
 version: 0.1.0.0
-synopsis: My Haskell project
+synopsis: A model checker for BSML.
 description: See report.pdf
-maintainer: My Name <my.email@example.com>
+maintainer: Tiziano Coroneo <tiziano.coroneo@student.uva.nl>
 category: Logic
 
 ghc-options: -Wall
