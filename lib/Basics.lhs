@@ -17,6 +17,8 @@ somenumbers = take 10 thenumbers
 
 randomnumbers :: IO [Integer]
 randomnumbers = replicateM 10 $ randomRIO (0,10)
+
+
 \end{code}
 
 We can interrupt the code anywhere we want.
