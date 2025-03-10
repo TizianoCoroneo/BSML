@@ -20,4 +20,4 @@ jobs:
     - name: Compile tests
       run: stack --system-ghc test --no-run-tests
     - name: Run tests
-      run: stack --system-ghc test
+      run: stack --system-ghc test --coverage
