@@ -27,7 +27,14 @@ type World = Int
 
 data KrM = KrM {_worlds :: Set World,
                 _rel :: World -> Set World,
-                _val :: World -> Set Proposition}
+                _val :: Proposition -> Set World}
 makeLenses ''KrM
+
+type Team = Set World
+
+support :: KrM -> Team -> Form -> Bool
+support _ s Bot = null s
+support _ s NE = not (null s)
+-- support m s (Prop n) = all (\w -> w `elem` (m^.val)) s
 
 \end{code}
