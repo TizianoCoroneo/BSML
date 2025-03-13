@@ -4,7 +4,8 @@
 This section describes a module which we will import later on.
 
 \begin{code}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Defs where
 
 import Data.Set (Set)
@@ -25,16 +26,28 @@ data Form
 
 type World = Int
 
-data KrM = KrM {_worlds :: Set World,
-                _rel :: World -> Set World,
-                _val :: Proposition -> Set World}
-makeLenses ''KrM
+data KrM = KrM {worlds :: Set World,
+                rel :: World -> Set World,
+                val :: Proposition -> Set World}
 
 type Team = Set World
 
 support :: KrM -> Team -> Form -> Bool
 support _ s Bot = null s
 support _ s NE = not (null s)
--- support m s (Prop n) = all (\w -> w `elem` (m^.val)) s
+support m s (Prop n) = all (`elem` val m n) s
+
+
+class Supportable m s f where
+  (|=) :: (m, s) -> f -> Bool
+
+class AntiSupportable m s f where
+  (=|) :: (m, s) -> f -> Bool
+
+instance Supportable KrM Team Form where
+  (|=) = uncurry support
+
+instance AntiSupportable KrM Team Form where
+  (=|) = uncurry antisupport
 
 \end{code}
