@@ -6,16 +6,9 @@ We will now use the library form Section \ref{sec:Basics} in a program.
 \begin{code}
 module Main where
 
-import Basics
-
 main :: IO ()
 main = do
   putStrLn "Hello!"
-  print somenumbers
-  print (map funnyfunction somenumbers)
-  myrandomnumbers <- randomnumbers
-  print myrandomnumbers
-  print (map funnyfunction myrandomnumbers)
   putStrLn "GoodBye"
 \end{code}
 
