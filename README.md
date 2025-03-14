@@ -10,10 +10,10 @@ Note: To rename the project you need to replace all occurrences of "report" with
 
 ## How to contribute
 - Checkout the latest commit on the `main` branch
-- Create a new branch and make it the current branch. Prefix the branch name with your username or nickname, to prevent naming conflicts. 
+- Create a new branch and make it the current branch. Prefix the branch name with your username or nickname, to prevent naming conflicts.
     - Example command: `git checkout -b tiziano/example-branch`
-- Make modifications to the code and commit the changes to your local repo. 
-    - Example command: `git add -a && git commit -m "feature: added a definition for the Tableau data type."`
+- Make modifications to the code and commit the changes to your local repo.
+    - Example command: `git add -A && git commit -m "feature: added a definition for the Tableau data type."`
         - This command adds all the modified files to the list of files to commit (called "staging area"), and creates a new commit with those files.
     - Accurate commit messages are not necessary, as we are going to squash pull requests into the main branch; this also means that you should provide clear Pull Request titles and descriptions.
     - "Squashing" branches mean merging all of their commits, making a single commit for each pull request. That commit will be added to the PR's target branch. This avoids having merge commits in the main branch, which are usually as confusing as they're useless, and avoids the need to constantly rebasing branches using interactive rebase, which is not git-beginner-friendly.
