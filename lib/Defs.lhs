@@ -8,9 +8,8 @@ This section describes a module which we will import later on.
 {-# LANGUAGE FlexibleInstances #-}
 module Defs where
 
-import Data.Set (Set, isSubsetOf, (\\), powerSet, union, unions, map, disjoint)
+import Data.Set (Set, isSubsetOf, powerSet, unions)
 import qualified Data.Set as Set
-import Test.QuickCheck (disjoin)
 
 type Proposition = Int
 
@@ -41,16 +40,16 @@ support _ s NE = not (null s)
 support m s (Prop n) = s `isSubsetOf` val m n
 support m s (Neg f) = antisupport m s f
 support m s (And f g) = support m s f && support m s g
-support m s (Or f g) = any (\t -> support m t f && support m (s \\ t) g) (powerSet s)
+support m s (Or f g) = any (\t -> support m t f && support m (s Set.\\ t) g) (powerSet s)
 support m s (Dia f) = all (any (\t -> not (null t) && support m t f) . powerSet . rel m) s
 
 antisupport :: KrM -> Team -> Form -> Bool
 antisupport _ _ Bot = True
 antisupport _ s NE = null s
-antisupport m s (Prop n) = disjoint s (val m n)
+antisupport m s (Prop n) = Set.disjoint s (val m n)
 antisupport m s (Neg f) = support m s f
 antisupport m s (Or f g) = antisupport m s f && antisupport m s g
-antisupport m s (And f g) = any (\t -> antisupport m t f && antisupport m (s \\ t) g) (powerSet s)
+antisupport m s (And f g) = any (\t -> antisupport m t f && antisupport m (s Set.\\ t) g) (powerSet s)
 antisupport m s (Dia f) = all (\w -> antisupport m (rel m w) f) s
 
 class Supportable m s f where
