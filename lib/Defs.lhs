@@ -8,7 +8,10 @@ This section describes a module which we will import later on.
 {-# LANGUAGE FlexibleInstances #-}
 module Defs where
 
-import Data.Set (Set, isSubsetOf, powerSet, unions)
+import Control.Monad
+
+import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
+
 import qualified Data.Set as Set
 
 type Proposition = Int
@@ -34,38 +37,39 @@ type Team = Set World
 teamRel :: KrM -> Team -> Set World
 teamRel m s = unions $ Set.map (rel m) s
 
-support :: KrM -> Team -> Form -> Bool
-support _ s Bot = null s
-support _ s NE = not (null s)
-support m s (Prop n) = s `isSubsetOf` val m n
-support m s (Neg f) = antisupport m s f
-support m s (And f g) = support m s f && support m s g
-support m s (Or f g) = any (\t -> support m t f && support m (s Set.\\ t) g) (powerSet s)
-support m s (Dia f) = all (any (\t -> not (null t) && support m t f) . powerSet . rel m) s
-
-antisupport :: KrM -> Team -> Form -> Bool
-antisupport _ _ Bot = True
-antisupport _ s NE = null s
-antisupport m s (Prop n) = Set.disjoint s (val m n)
-antisupport m s (Neg f) = support m s f
-antisupport m s (Or f g) = antisupport m s f && antisupport m s g
-antisupport m s (And f g) = any (\t -> antisupport m t f && antisupport m (s Set.\\ t) g) (powerSet s)
-antisupport m s (Dia f) = all (\w -> antisupport m (rel m w) f) s
-
 class Supportable m s f where
+  support :: m -> s -> f -> Bool
+  support = curry (|=)
+
   (|=) :: (m, s) -> f -> Bool
-
-class AntiSupportable m s f where
-  (=|) :: (m, s) -> f -> Bool
-
-instance Supportable KrM Team Form where
   (|=) = uncurry support
 
-instance AntiSupportable KrM Team Form where
+class AntiSupportable m s f where
+  antisupport :: m -> s -> f -> Bool
+  antisupport = curry (=|)
+
+  (=|) :: (m, s) -> f -> Bool
   (=|) = uncurry antisupport
 
--- instance Supportable KrM Team [Form] where
--- (m,s) |= fs = all
--- hello
+teamParts :: Team -> Set (Team, Team)
+teamParts = join cartesianProduct . powerSet
+
+instance Supportable KrM Team Form where
+  (_,s) |= Bot     = null s
+  (_,s) |= NE      = not (null s)
+  (m,s) |= Prop n  = s `isSubsetOf` val m n
+  (m,s) |= Neg f   = (m,s) =| f
+  (m,s) |= And f g = (m,s) |= f && (m,s) |= g
+  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m, u) |= g) $ teamParts s
+  (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
+
+instance AntiSupportable KrM Team Form where
+  antisupport _ _ Bot       = True
+  antisupport _ s NE        = null s
+  antisupport m s (Prop n)  = Set.disjoint s (val m n)
+  antisupport m s (Neg f)   = (m,s) |= f
+  antisupport m s (Or f g)  = (m,s) =| f && (m,s) =| g
+  antisupport m s (And f g) = any (\t -> (m,t) =| f && (m, s Set.\\ t) =| g) (powerSet s)
+  antisupport m s (Dia f)   = all (\w -> (m, rel m w) =| f) s
 
 \end{code}
