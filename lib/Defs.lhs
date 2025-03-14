@@ -11,6 +11,7 @@ module Defs where
 import Control.Monad
 
 import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
+
 import qualified Data.Set as Set
 
 type Proposition = Int
@@ -70,6 +71,5 @@ instance AntiSupportable KrM Team Form where
   antisupport m s (Or f g)  = (m,s) =| f && (m,s) =| g
   antisupport m s (And f g) = any (\t -> (m,t) =| f && (m, s Set.\\ t) =| g) (powerSet s)
   antisupport m s (Dia f)   = all (\w -> (m, rel m w) =| f) s
-
 
 \end{code}
