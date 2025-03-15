@@ -12,6 +12,9 @@ import Control.Monad
 
 import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
 import qualified Data.Set as Set
+import Test.QuickCheck
+
+import Test.QuickCheck
 
 type Proposition = Int
 type World = Int
@@ -28,10 +31,14 @@ data Form
   deriving (Eq,Show)
 
 
-data KrM = KrM {worlds :: Set World,
-                rel :: World -> Set World,
-                val :: Proposition -> Set World}
+data KrM = KrM {
+  worlds :: Set World,
+  rel :: Rel,
+  val :: Val}
 
+type Rel = World -> Set World
+type Val = Proposition -> Set World
+type Team = Set World
 
 teamRel :: KrM -> Team -> Set World
 teamRel m s = unions $ Set.map (rel m) s
@@ -63,6 +70,7 @@ instance Supportable KrM Team Form where
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
 instance Antisupportable KrM Team Form where
+
   _     =| Bot     = True
   (_,s) =| NE      = null s
   (m,s) =| Prop n  = Set.disjoint s (val m n)
@@ -119,5 +127,27 @@ s3a1, s3a2, s3b :: Team
 s3a1 = Set.singleton 4
 s3a2 = Set.fromList [3,4]
 s3b = Set.fromList [1,2]
+
+subsetOf :: Ord a => Set a -> Gen (Set a)
+subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
+
+genFunctionToSubset :: Ord a => CoArbitrary a => Set a -> Gen (Int -> Set a)
+genFunctionToSubset ws = do
+  outputs <- vectorOf (length ws) (subsetOf ws)
+  fmap (\f x -> f x ! outputs) arbitrary
+
+(!) :: Int -> [Set a] -> Set a
+(!) _ [] = Set.empty
+(!) i xs = xs !! (i `mod` length xs)
+
+instance Arbitrary KrM where
+  arbitrary = sized (\s -> do
+    ws <- Set.fromList <$> vectorOf s arbitrary
+    r <- genFunctionToSubset ws
+    v <- genFunctionToSubset ws
+    return (KrM ws r v))
+
+instance Show KrM where
+  show (KrM ws _ _) = "KrM (" ++ show ws ++ ") (*) (*)" -- TODO: improve
 
 \end{code}
