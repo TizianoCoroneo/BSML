@@ -19,6 +19,7 @@ import Test.QuickCheck
 type Proposition = Int
 type World = Int
 
+-- BSML formulas
 data Form
   = Bot
   | NE
@@ -145,6 +146,15 @@ instance Arbitrary KrM where
     r <- genFunctionToSubset ws
     v <- genFunctionToSubset ws
     return (KrM ws r v))
+
+instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
+  arbitrary = do
+    m <- arbitrary
+    s <- subsetOf (worlds m)
+    return (m, s)
+
+relList :: KrM -> [(World, [World])]
+relList m = toList . Set.map ((,) <*> toList . rel m) $ worlds m
 
 instance Show KrM where
   show (KrM ws _ _) = "KrM (" ++ show ws ++ ") (*) (*)" -- TODO: improve
