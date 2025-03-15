@@ -168,12 +168,12 @@ u3 = Set.fromList [0..3]
 r3a, r3b, r3c :: World -> Set World
 r3a = const Set.empty
 
-r3b wpq = Set.fromList [wp, wpq]
-r3b w0  = Set.singleton wq
-r3b _   = Set.empty
+r3b 2 = Set.fromList [wp, wpq]
+r3b 3 = Set.singleton wq
+r3b _ = Set.empty
 
-r3c wpq = Set.fromList [wp, wq]
-r3c _   = Set.empty
+r3c 2 = Set.fromList [wp, wq]
+r3c _ = Set.empty
 
 v3 :: Proposition -> Set World
 v3 1 = Set.fromList [wp, wpq]
