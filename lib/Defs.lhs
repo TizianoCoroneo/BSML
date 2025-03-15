@@ -15,10 +15,18 @@ import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
 import qualified Data.Set as Set
 import Test.QuickCheck
 
-import Test.QuickCheck
-
 type Proposition = Int
 
+-- Basic Modal Logic formulas
+data MForm
+  = MProp Proposition
+  | MNeg MForm
+  | MAnd MForm MForm
+  | MOr  MForm MForm
+  | MDia MForm
+  deriving (Eq,Show)
+
+-- BSML formulas
 data Form
   = Bot
   | NE
@@ -60,6 +68,13 @@ class AntiSupportable m s f where
 teamParts :: Team -> Set (Team, Team)
 teamParts = join cartesianProduct . powerSet
 
+instance Supportable KrM World MForm where
+  (m,w) |= MProp n  = w `elem` val m n
+  (m,w) |= MNeg f   = not $ (m,w) |= f
+  (m,w) |= MAnd f g = (m,w) |= f && (m,w) |= g
+  (m,w) |= MOr f g  = (m,w) |= f || (m,w) |= g
+  (m,w) |= MDia f   = any (\w' -> (m,w') |= f) (rel m w)
+
 instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
   (_,s) |= NE      = not (null s)
@@ -79,6 +94,14 @@ instance AntiSupportable KrM Team Form where
   (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
 
   (=|) = uncurry antisupport
+
+-- In Aloni2024 it is indicated as []+
+enrich :: MForm -> Form
+enrich (MProp n) = Prop n
+enrich (MNeg n) = Neg (enrich n) `And` NE
+enrich (MAnd p q) = enrich p `And` enrich q `And` NE
+enrich (MOr p q) = (enrich p `Or` enrich q) `And` NE
+enrich (MDia n) = Dia (enrich n) `And` NE
 
 subsetOf :: Ord a => Set a -> Gen (Set a)
 subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
@@ -105,5 +128,30 @@ instance Show KrM where
 -- instance Supportable KrM Team [Form] where
 -- (m,s) |= fs = all
 -- hello
+
+\end{code}
+
+Some example models.
+
+\begin{code}
+
+figure3 :: KrM
+figure3 = KrM (Set.fromList [0, 1, 2, 3]) r v
+  where r x = case x of
+         0 -> Set.empty
+         1 -> Set.empty
+         2 -> Set.empty
+         3 -> Set.fromList [1, 2]
+         _ -> undefined
+        v x = case x of
+         1 -> Set.fromList [1, 3]
+         2 -> Set.fromList [2, 3]
+         _ -> undefined
+
+figure3team :: Team
+figure3team = Set.fromList [3]
+
+figure3propC :: Bool
+figure3propC = (figure3, figure3team) |= enrich (MDia (MProp 1 `MOr` MProp 2))
 
 \end{code}
