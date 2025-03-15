@@ -10,15 +10,15 @@ module Defs where
 
 import Control.Monad
 
-import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
-import qualified Data.Set as Set
-import Test.QuickCheck
+import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct, toList, member)
 
+import qualified Data.Set as Set
 import Test.QuickCheck
 
 type Proposition = Int
 type World = Int
 
+-- BSML formulas
 data Form
   = Bot
   | NE
@@ -69,7 +69,6 @@ instance Supportable KrM Team Form where
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
 instance Antisupportable KrM Team Form where
-
   _     =| Bot     = True
   (_,s) =| NE      = null s
   (m,s) =| Prop n  = Set.disjoint s (val m n)
@@ -104,29 +103,6 @@ bigand :: [Form] -> Form
 bigand [] = toptop
 bigand fs = foldr1 And fs
 
-w3 :: Set World
-w3 = Set.fromList [1..4]
-
-r3a, r3b :: World -> Set World
-r3a = const Set.empty
-r3b 1 = Set.fromList [1,3]
-r3b 2 = Set.singleton 4
-r3b _ = Set.empty
-
-v3 :: Proposition -> Set World
-v3 1 = Set.fromList [1,3]
-v3 2 = Set.fromList [1,4]
-v3 _ = Set.empty
-
-m3a, m3b :: KrM
-m3a = KrM w3 r3a v3
-m3b = KrM w3 r3b v3
-
-s3a1, s3a2, s3b :: Team
-s3a1 = Set.singleton 4
-s3a2 = Set.fromList [3,4]
-s3b = Set.fromList [1,2]
-
 subsetOf :: Ord a => Set a -> Gen (Set a)
 subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
 
@@ -146,7 +122,91 @@ instance Arbitrary KrM where
     v <- genFunctionToSubset ws
     return (KrM ws r v))
 
-instance Show KrM where
-  show (KrM ws _ _) = "KrM (" ++ show ws ++ ") (*) (*)" -- TODO: improve
+instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
+  arbitrary = do
+    m <- arbitrary
+    s <- subsetOf (worlds m)
+    return (m, s)
 
+relList :: KrM -> [(World, [World])]
+relList m = toList . Set.map ((,) <*> toList . rel m) $ worlds m
+
+instance Show KrM where
+-- TODO: improve
+  show m@(KrM ws _ _) = "KrM (" ++ show ws ++ ") (" ++ show (relList m) ++ ") (*)"
+
+\end{code}
+Some example models.
+
+\begin{code}
+-- Aloni2024 - Figure 3.
+w0, wp, wq, wpq :: Int
+wp  = 0
+wq  = 1
+wpq = 2
+w0  = 3
+
+u3 :: Set World
+u3 = Set.fromList [0..3]
+
+r3a, r3b, r3c :: World -> Set World
+r3a = const Set.empty
+
+r3b 2 = Set.fromList [wp, wpq]
+r3b 3 = Set.singleton wq
+r3b _ = Set.empty
+
+r3c 2 = Set.fromList [wp, wq]
+r3c _ = Set.empty
+
+v3 :: Proposition -> Set World
+v3 1 = Set.fromList [wp, wpq]
+v3 2 = Set.fromList [wq, wpq]
+v3 _ = Set.empty
+
+m3a, m3b, m3c :: KrM
+m3a = KrM u3 r3a v3
+m3b = KrM u3 r3b v3
+m3c = KrM u3 r3c v3
+
+s3a1, s3a2, s3b, s3c :: Team
+s3a1 = Set.singleton wq
+s3a2 = Set.fromList [wp, wq]
+s3b = Set.fromList [wpq, w0]
+s3c = Set.singleton wpq
+
+\end{code}
+
+\begin{code}
+-- Basic Modal Logic formulas
+data MForm
+  = MProp Proposition
+  | MNeg MForm
+  | MAnd MForm MForm
+  | MOr  MForm MForm
+  | MDia MForm
+  deriving (Eq,Show)
+
+instance Supportable KrM World MForm where
+  (m,w) |= MProp n  = w `member` val m n
+  (m,w) |= MNeg f   = not $ (m,w) |= f
+  (m,w) |= MAnd f g = (m,w) |= f && (m,w) |= g
+  (m,w) |= MOr f g  = (m,w) |= f || (m,w) |= g
+  (m,w) |= MDia f   = any (\v -> (m,v) |= f) $ rel m w
+
+-- Modal formulas are a subset of BSML-formulas
+toBSML :: MForm -> Form
+toBSML (MProp n)  = Prop n
+toBSML (MNeg f)   = Neg (toBSML f)
+toBSML (MAnd f g) = And (toBSML f) (toBSML g)
+toBSML (MOr f g)  = Or (toBSML f) (toBSML g)
+toBSML (MDia f)   = Dia (toBSML f)
+
+-- In Aloni2024 it is indicated as []+
+enrich :: MForm -> Form
+enrich (MProp n)  = Prop n `And` NE
+enrich (MNeg f)   = Neg (enrich f) `And` NE
+enrich (MDia f)   = Dia (enrich f) `And` NE
+enrich (MAnd f g) = (enrich f `And` enrich g) `And` NE
+enrich (MOr f g)  = (enrich f `Or`  enrich g) `And` NE
 \end{code}
