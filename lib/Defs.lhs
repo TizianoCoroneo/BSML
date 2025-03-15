@@ -63,13 +63,12 @@ instance Supportable KrM Team Form where
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
 instance AntiSupportable KrM Team Form where
-  antisupport _ _ Bot       = True
-  antisupport _ s NE        = null s
-  antisupport m s (Prop n)  = Set.disjoint s (val m n)
-  antisupport m s (Neg f)   = (m,s) |= f
-  antisupport m s (Or f g)  = (m,s) =| f && (m,s) =| g
-  antisupport m s (And f g) = any (\t -> (m,t) =| f && (m, s Set.\\ t) =| g) (powerSet s)
-  antisupport m s (Dia f)   = all (\w -> (m, rel m w) =| f) s
-
+  _     =| Bot     = True
+  (_,s) =| NE      = null s
+  (m,s) =| Prop n  = Set.disjoint s (val m n)
+  (m,s) =| Neg f   = (m,s) |= f
+  (m,s) =| And f g = any (\(t,u) -> Set.union t u == s && (m,t) =| f && (m,u) =| g) $ teamParts s
+  (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
+  (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
 
 \end{code}
