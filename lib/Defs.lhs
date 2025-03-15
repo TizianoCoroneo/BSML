@@ -93,8 +93,6 @@ instance AntiSupportable KrM Team Form where
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
 
-  (=|) = uncurry antisupport
-
 -- In Aloni2024 it is indicated as []+
 enrich :: MForm -> Form
 enrich (MProp n) = Prop n
