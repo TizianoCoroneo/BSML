@@ -157,7 +157,44 @@ relList :: KrM -> [(World, [World])]
 relList m = toList . Set.map ((,) <*> toList . rel m) $ worlds m
 
 instance Show KrM where
-  show (KrM ws _ _) = "KrM (" ++ show ws ++ ") (*) (*)" -- TODO: improve
+Some example models.
+
+\begin{code}
+-- Aloni2024 - Figure 3.
+w0, wp, wq, wpq :: Int
+wp  = 0
+wq  = 1
+wpq = 2
+w0  = 3
+
+u3 :: Set World
+u3 = Set.fromList [0..3]
+
+r3a, r3b, r3c :: World -> Set World
+r3a = const Set.empty
+
+r3b 2 = Set.fromList [wp, wpq]
+r3b 3 = Set.singleton wq
+r3b _ = Set.empty
+
+r3c 2 = Set.fromList [wp, wq]
+r3c _ = Set.empty
+
+v3 :: Proposition -> Set World
+v3 1 = Set.fromList [wp, wpq]
+v3 2 = Set.fromList [wq, wpq]
+v3 _ = Set.empty
+
+m3a, m3b, m3c :: KrM
+m3a = KrM u3 r3a v3
+m3b = KrM u3 r3b v3
+m3c = KrM u3 r3c v3
+
+s3a1, s3a2, s3b, s3c :: Team
+s3a1 = Set.singleton wq
+s3a2 = Set.fromList [wp, wq]
+s3b = Set.fromList [wpq, w0]
+s3c = Set.singleton wpq
 
 \end{code}
 
