@@ -135,6 +135,7 @@ Some example models.
 
 \begin{code}
 
+-- Aloni2024 - Figure 3c.
 figure3 :: KrM
 figure3 = KrM (Set.fromList [0, 1, 2, 3]) r v
   where r x = case x of
