@@ -18,7 +18,6 @@ import Test.QuickCheck
 
 type Proposition = Int
 type World = Int
-type Team = Set World
 
 data Form
   = Bot
