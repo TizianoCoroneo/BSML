@@ -1,7 +1,7 @@
 
-\section{The most basic library}\label{sec:Basics}
+\section{Basic Definitions}\label{sec:Defs}
 
-This section describes a module which we will import later on.
+This section describes the basic definitions for the explicit model checker.
 
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -13,8 +13,6 @@ import Control.Monad
 import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
 
 import qualified Data.Set as Set
-
-import Test.QuickCheck
 
 type Proposition = Int
 
@@ -46,7 +44,7 @@ class Supportable m s f where
   (|=) :: (m, s) -> f -> Bool
   (|=) = uncurry support
 
-class AntiSupportable m s f where
+class Antisupportable m s f where
   antisupport :: m -> s -> f -> Bool
   antisupport = curry (=|)
 
@@ -65,7 +63,7 @@ instance Supportable KrM Team Form where
   (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m, u) |= g) $ teamParts s
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
-instance AntiSupportable KrM Team Form where
+instance Antisupportable KrM Team Form where
   _     =| Bot     = True
   (_,s) =| NE      = null s
   (m,s) =| Prop n  = Set.disjoint s (val m n)
@@ -73,5 +71,31 @@ instance AntiSupportable KrM Team Form where
   (m,s) =| And f g = any (\(t,u) -> Set.union t u == s && (m,t) =| f && (m,u) =| g) $ teamParts s
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
+
+instance Supportable KrM Team [Form] where
+  support = (all .) . support
+
+instance Antisupportable KrM Team [Form] where
+  antisupport = (all .) . antisupport
+
+box :: Form -> Form
+box = Neg . Dia . Neg
+
+botbot :: Form
+botbot = And Bot NE
+
+top :: Form
+top = NE
+
+toptop :: Form
+toptop = Neg Bot
+
+bigor :: [Form] -> Form
+bigor [] = Bot
+bigor fs = foldr1 Or fs
+
+bigand :: [Form] -> Form
+bigand [] = toptop
+bigand fs = foldr1 And fs
 
 \end{code}
