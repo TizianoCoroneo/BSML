@@ -115,4 +115,9 @@ m3a, m3b :: KrM
 m3a = KrM w3 r3a v3
 m3b = KrM w3 r3b v3
 
+s3a1, s3a2, s3b :: Team
+s3a1 = Set.singleton 4
+s3a2 = Set.fromList [3,4]
+s3b = Set.fromList [1,2]
+
 \end{code}
