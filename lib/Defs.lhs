@@ -1,7 +1,7 @@
 
-\section{The most basic library}\label{sec:Basics}
+\section{Basic Definitions}\label{sec:Defs}
 
-This section describes a module which we will import later on.
+This section describes the basic definitions for the explicit model checker.
 
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -11,11 +11,11 @@ module Defs where
 import Control.Monad
 
 import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
-
 import qualified Data.Set as Set
 import Test.QuickCheck
 
 type Proposition = Int
+type World = Int
 
 -- Basic Modal Logic formulas
 data MForm
@@ -37,7 +37,6 @@ data Form
   | Dia Form
   deriving (Eq,Show)
 
-type World = Int
 
 data KrM = KrM {
   worlds :: Set World,
@@ -58,7 +57,7 @@ class Supportable m s f where
   (|=) :: (m, s) -> f -> Bool
   (|=) = uncurry support
 
-class AntiSupportable m s f where
+class Antisupportable m s f where
   antisupport :: m -> s -> f -> Bool
   antisupport = curry (=|)
 
@@ -81,10 +80,11 @@ instance Supportable KrM Team Form where
   (m,s) |= Prop n  = s `isSubsetOf` val m n
   (m,s) |= Neg f   = (m,s) =| f
   (m,s) |= And f g = (m,s) |= f && (m,s) |= g
-  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m, u) |= g) $ teamParts s
+  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
-instance AntiSupportable KrM Team Form where
+instance Antisupportable KrM Team Form where
+
   _     =| Bot     = True
   (_,s) =| NE      = null s
   (m,s) =| Prop n  = Set.disjoint s (val m n)
@@ -93,6 +93,7 @@ instance AntiSupportable KrM Team Form where
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
 
+
 -- In Aloni2024 it is indicated as []+
 enrich :: MForm -> Form
 enrich (MProp n) = Prop n
@@ -100,6 +101,32 @@ enrich (MNeg n) = Neg (enrich n) `And` NE
 enrich (MAnd p q) = enrich p `And` enrich q `And` NE
 enrich (MOr p q) = (enrich p `Or` enrich q) `And` NE
 enrich (MDia n) = Dia (enrich n) `And` NE
+
+instance Supportable KrM Team [Form] where
+  support = (all .) . support
+
+instance Antisupportable KrM Team [Form] where
+  antisupport = (all .) . antisupport
+
+box :: Form -> Form
+box = Neg . Dia . Neg
+
+botbot :: Form
+botbot = And Bot NE
+
+top :: Form
+top = NE
+
+toptop :: Form
+toptop = Neg Bot
+
+bigor :: [Form] -> Form
+bigor [] = Bot
+bigor fs = foldr1 Or fs
+
+bigand :: [Form] -> Form
+bigand [] = toptop
+bigand fs = foldr1 And fs
 
 subsetOf :: Ord a => Set a -> Gen (Set a)
 subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
@@ -123,34 +150,48 @@ instance Arbitrary KrM where
 instance Show KrM where
   show (KrM ws _ _) = "KrM (" ++ show ws ++ ") (*) (*)" -- TODO: improve
 
--- instance Supportable KrM Team [Form] where
--- (m,s) |= fs = all
--- hello
-
 \end{code}
 
 Some example models.
 
 \begin{code}
+-- Aloni2024 - Figure 3.
+w0, wp, wq, wpq :: Int
+wp  = 0
+wq  = 1
+wpq = 2
+w0  = 3
 
--- Aloni2024 - Figure 3c.
-figure3 :: KrM
-figure3 = KrM (Set.fromList [0, 1, 2, 3]) r v
-  where r x = case x of
-         0 -> Set.empty
-         1 -> Set.empty
-         2 -> Set.empty
-         3 -> Set.fromList [1, 2]
-         _ -> undefined
-        v x = case x of
-         1 -> Set.fromList [1, 3]
-         2 -> Set.fromList [2, 3]
-         _ -> undefined
+u3 :: Set World
+u3 = Set.fromList [0..3]
 
-figure3team :: Team
-figure3team = Set.fromList [3]
+r3a, r3b, r3c :: World -> Set World
+r3a = const Set.empty
+
+r3b wpq = Set.fromList [wp, wpq]
+r3b w0  = Set.singleton wq
+r3b _   = Set.empty
+
+r3c wpq = Set.fromList [wp, wq]
+r3c _   = Set.empty
+
+v3 :: Proposition -> Set World
+v3 1 = Set.fromList [wp, wpq]
+v3 2 = Set.fromList [wq, wpq]
+v3 _ = Set.empty
+
+m3a, m3b, m3c :: KrM
+m3a = KrM u3 r3a v3
+m3b = KrM u3 r3b v3
+m3c = KrM u3 r3c v3
+
+s3a1, s3a2, s3b, s3c :: Team
+s3a1 = Set.singleton wq
+s3a2 = Set.fromList [wp, wq]
+s3b = Set.fromList [wpq, w0]
+s3c = Set.singleton wpq
 
 figure3propC :: Bool
-figure3propC = (figure3, figure3team) |= enrich (MDia (MProp 1 `MOr` MProp 2))
+figure3propC = (m3c, s3c) |= enrich (MDia (MProp 1 `MOr` MProp 2))
 
 \end{code}
