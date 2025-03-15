@@ -11,10 +11,11 @@ module Defs where
 import Control.Monad
 
 import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct)
-
 import qualified Data.Set as Set
 
 type Proposition = Int
+type World = Int
+type Team = Set World
 
 data Form
   = Bot
@@ -26,13 +27,11 @@ data Form
   | Dia Form
   deriving (Eq,Show)
 
-type World = Int
 
 data KrM = KrM {worlds :: Set World,
                 rel :: World -> Set World,
                 val :: Proposition -> Set World}
 
-type Team = Set World
 
 teamRel :: KrM -> Team -> Set World
 teamRel m s = unions $ Set.map (rel m) s
@@ -60,7 +59,7 @@ instance Supportable KrM Team Form where
   (m,s) |= Prop n  = s `isSubsetOf` val m n
   (m,s) |= Neg f   = (m,s) =| f
   (m,s) |= And f g = (m,s) |= f && (m,s) |= g
-  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m, u) |= g) $ teamParts s
+  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
 
 instance Antisupportable KrM Team Form where
@@ -97,5 +96,23 @@ bigor fs = foldr1 Or fs
 bigand :: [Form] -> Form
 bigand [] = toptop
 bigand fs = foldr1 And fs
+
+w3 :: Set World
+w3 = Set.fromList [1..4]
+
+r3a, r3b :: World -> Set World
+r3a = const Set.empty
+r3b 1 = Set.fromList [1,3]
+r3b 2 = Set.singleton 4
+r3b _ = Set.empty
+
+v3 :: Proposition -> Set World
+v3 1 = Set.fromList [1,3]
+v3 2 = Set.fromList [1,4]
+v3 _ = Set.empty
+
+m3a, m3b :: KrM
+m3a = KrM w3 r3a v3
+m3b = KrM w3 r3b v3
 
 \end{code}
