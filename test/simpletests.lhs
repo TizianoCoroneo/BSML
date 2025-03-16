@@ -48,15 +48,15 @@ main = hspec $ do
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
   describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
-      \m s -> (m::KrM, s::Team) |= toptop
+      \(m,s) -> (m::KrM, s::State) |= toptop
     prop "strong contradiction is never supported" $
-      \m s -> not $ (m::KrM, s::Team) |= botbot
+      \(m,s) -> not $ (m::KrM, s::State) |= botbot
     modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
-      \m s -> (m::KrM, s::Team) |= (p `Or` Neg p)
+      \(m,s) -> (m::KrM, s::State) |= (p `Or` Neg p)
     prop "NE v ~NE does *can* be supported" $
-      expectFailure $ \m s -> (m::KrM, s::Team) |= (top `Or` Neg top)
+      expectFailure $ \(m,s) -> (m::KrM, s::State) |= (top `Or` Neg top)
     prop "strong tautology !== top" $
-      expectFailure $ \m s -> (m::KrM, s::Team) |= toptop == (m,s) |= top
+      expectFailure $ \(m,s) -> (m::KrM, s::State) |= toptop == (m,s) |= top
   describe "Flatness" $ do
     xprop "M,s |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" (undefined :: Property)
 --      \m s f -> (m::KrM, s::Team) |= toBSML (f::MForm) ==
