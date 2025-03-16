@@ -16,6 +16,8 @@ import qualified Data.Set as Set
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+
+import qualified Data.Set as Set
 import Test.QuickCheck
 
 type Proposition = Int
@@ -202,6 +204,7 @@ instance Supportable KrM World MForm where
   (m,w) |= MAnd f g = (m,w) |= f && (m,w) |= g
   (m,w) |= MOr f g  = (m,w) |= f || (m,w) |= g
   (m,w) |= MDia f   = any (\v -> (m,v) |= f) $ rel' m w
+
 
 -- Modal formulas are a subset of BSML-formulas
 toBSML :: MForm -> Form
