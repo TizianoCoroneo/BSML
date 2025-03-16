@@ -8,16 +8,13 @@ This section describes the basic definitions for the explicit model checker.
 {-# LANGUAGE FlexibleInstances #-}
 module Defs where
 
-import Control.Monad
-
+-- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
 import Data.Set (Set, cartesianProduct)
 import qualified Data.Set as Set
 
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-
-import qualified Data.Set as Set
 import Test.QuickCheck
 
 type Proposition = Int
@@ -35,24 +32,23 @@ data Form
   deriving (Eq,Show)
 
 
-data KrM = KrM {
-  worlds :: Set World,
-  rel :: Rel,
-  val :: Val}
-  deriving (Eq, Show)
+data KrM = KrM {worlds :: Set World,
+                rel    :: Rel,
+                val    :: Val}
+  deriving (Show)
 
 type Rel = Map World (Set World)
 type Val = Map World (Set Proposition)
-type State = Set World
-
-val' :: KrM -> World -> Set Proposition
-val' = (Map.!) . val
+type Team = Set World
 
 rel' :: KrM -> World -> Set World
 rel' = (Map.!) . rel
 
-stateRel :: KrM -> State -> Set World
-stateRel m s = Set.unions $ Set.map (rel m Map.!) s
+val' :: KrM -> World -> Set Proposition
+val' = (Map.!) . val
+
+teamRel :: KrM -> Team -> Set World
+teamRel m s = Set.unions $ Set.map (rel m Map.!) s
 
 class Supportable m s f where
   support :: m -> s -> f -> Bool
@@ -68,10 +64,10 @@ class Antisupportable m s f where
   (=|) :: (m, s) -> f -> Bool
   (=|) = uncurry antisupport
 
-teamParts :: State -> Set (State, State)
-teamParts = join cartesianProduct . Set.powerSet
+teamParts :: Team -> Set (Team, Team)
+teamParts s = cartesianProduct (Set.powerSet s) (Set.powerSet s)
 
-instance Supportable KrM State Form where
+instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
   (_,s) |= NE      = not (null s)
   (m,s) |= Prop n  = all (elem n) $ Set.map (val' m) s
@@ -80,7 +76,7 @@ instance Supportable KrM State Form where
   (m,s) |= Or f g  = any (\(t,u) -> t <> u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . Set.powerSet . rel' m) s
 
-instance Antisupportable KrM State Form where
+instance Antisupportable KrM Team Form where
   _     =| Bot     = True
   (_,s) =| NE      = null s
   (m,s) =| Prop n  = not . any (elem n) $ Set.map (val' m) s
@@ -89,10 +85,10 @@ instance Antisupportable KrM State Form where
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel' m w) =| f) s
 
-instance Supportable KrM State [Form] where
+instance Supportable KrM Team [Form] where
   support = (all .) . support
 
-instance Antisupportable KrM State [Form] where
+instance Antisupportable KrM Team [Form] where
   antisupport = (all .) . antisupport
 
 box :: Form -> Form
@@ -135,7 +131,7 @@ instance Arbitrary KrM where
     v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) arbitrary
     return $ KrM ws r v)
 
-instance {-# OVERLAPPING #-} Arbitrary (KrM, State) where
+instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
   arbitrary = do
     m <- arbitrary
     s <- subsetOf (worlds m)
@@ -180,7 +176,7 @@ m3a = KrM u3 r3a v3
 m3b = KrM u3 r3b v3
 m3c = KrM u3 r3c v3
 
-s3a1, s3a2, s3b, s3c :: State
+s3a1, s3a2, s3b, s3c :: Team
 s3a1 = Set.singleton wq
 s3a2 = Set.fromList [wp, wq]
 s3b  = Set.fromList [wpq, w0]
