@@ -37,13 +37,17 @@ data KrM = KrM {
   worlds :: Set World,
   rel :: Rel,
   val :: Val}
+  deriving (Eq, Show)
 
 type Rel = Map World (Set World)
 type Val = Map World (Set Proposition)
 type State = Set World
 
+val' :: KrM -> World -> Set Proposition
+val' = (Map.!) . val
+
 rel' :: KrM -> World -> Set World
-rel' m w = rel m Map.! w
+rel' = (Map.!) . rel
 
 stateRel :: KrM -> State -> Set World
 stateRel m s = Set.unions $ Set.map (rel m Map.!) s
@@ -68,7 +72,7 @@ teamParts = join cartesianProduct . Set.powerSet
 instance Supportable KrM State Form where
   (_,s) |= Bot     = null s
   (_,s) |= NE      = not (null s)
-  (m,s) |= Prop n  = all (elem n) $ Set.map (rel' m) s
+  (m,s) |= Prop n  = all (elem n) $ Set.map (val' m) s
   (m,s) |= Neg f   = (m,s) =| f
   (m,s) |= And f g = (m,s) |= f && (m,s) |= g
   (m,s) |= Or f g  = any (\(t,u) -> t <> u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
@@ -77,7 +81,7 @@ instance Supportable KrM State Form where
 instance Antisupportable KrM State Form where
   _     =| Bot     = True
   (_,s) =| NE      = null s
-  (m,s) =| Prop n  = not . any (elem n) $ Set.map (rel' m) s
+  (m,s) =| Prop n  = not . any (elem n) $ Set.map (val' m) s
   (m,s) =| Neg f   = (m,s) |= f
   (m,s) =| And f g = any (\(t,u) -> t <> u == s && (m,t) =| f && (m,u) =| g) $ teamParts s
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
@@ -125,8 +129,8 @@ instance Arbitrary KrM where
   arbitrary = sized (\n -> do
     k <- choose (0, n)
     let ws = Set.fromList [0..k]
-    r <- Map.fromList . zip [0..k] <$> vectorOf k (subsetOf ws)
-    v <- Map.fromList . zip [0..k] <$> vectorOf k arbitrary
+    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) arbitrary
     return $ KrM ws r v)
 
 instance {-# OVERLAPPING #-} Arbitrary (KrM, State) where
@@ -134,12 +138,6 @@ instance {-# OVERLAPPING #-} Arbitrary (KrM, State) where
     m <- arbitrary
     s <- subsetOf (worlds m)
     return (m, s)
-
-relList :: KrM -> [(World, [World])]
-relList m = Set.toList . Set.map ((,) <*> Set.toList . rel' m) $ worlds m
-
-instance Show KrM where
-  show m@(KrM ws _ _) = "KrM (" ++ show ws ++ ") (" ++ show (relList m) ++ ") (" ++ show (val m) ++ ")"
 
 \end{code}
 Some example models.
@@ -199,7 +197,7 @@ data MForm
   deriving (Eq,Show)
 
 instance Supportable KrM World MForm where
-  (m,w) |= MProp n  = n `elem` val m Map.! w
+  (m,w) |= MProp n  = n `elem` val' m w
   (m,w) |= MNeg f   = not $ (m,w) |= f
   (m,w) |= MAnd f g = (m,w) |= f && (m,w) |= g
   (m,w) |= MOr f g  = (m,w) |= f || (m,w) |= g
