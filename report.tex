@@ -1,4 +1,5 @@
 \documentclass[12pt,a4paper]{article}
+\usepackage{amsmath}
 \input{latexmacros.tex}
 
 \title{My Report}
@@ -12,10 +13,28 @@
 
 \begin{abstract}
 We implement an explicit model checker for bilateral state-based modal logic
-(BSML), as described in \cite{Aloni2024}.
+(BSML), as described in \cite{Aloni2024}. BSML has been used to account for
+Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
+interpretations that verify a sentence by empty configuration  (\textit{neglect-zero tendency}).
 \end{abstract}
 
-\vfill
+Free-Choice (\textit{FC}) inferences are instances of conjunctive meaning being unexpectedly
+derived from a disjunctive sentence. In the following example, a modalized disjunction yields
+a conjunction of modals. 
+
+\begin{enumerate}
+\item You may go to the beach or to the cinema $\rightsquigarrow$ You may go to the beach
+ and you may go to the cinema
+\item $\Diamond(b\vee c)\rightsquigarrow\Diamond b \wedge \Diamond c$
+\end{enumerate}
+
+
+Such an inference is invalid in classical modal logic, since when $b$ is false and $c$ is true $\Diamond(b\vee c)$ is true but
+$\Diamond b \wedge \Diamond c$ is false. Yet the inference in FC makes perfect sense in natural language. How
+to account for the discrepancy then? Aloni (2022) explain FC inference as a consequence of the \textit{neglect-zero tendency},
+the cognitive preference for representations of reality that verify a sentence by concrete occurrences rather
+than an empty configuration. For example, though the sentence "I have no red hats" is verified both by a closet
+of blue hats and by a closet with no hats, "blue hats" is less cognitively taxing than "no hats", the zero-model.
 
 \tableofcontents
 
