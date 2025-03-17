@@ -1,5 +1,5 @@
 
-\section{Basic Definitions}\label{sec:Defs}
+\section{Bilateral State-based Modal Logic}\label{sec:BSML}
 
 This section describes the basic definitions for the explicit model checker.
 
@@ -31,15 +31,14 @@ data Form
   | Dia Form
   deriving (Eq,Show)
 
+type Team = Set World
+type Rel = Map World (Set World)
+type Val = Map World (Set Proposition)
 
 data KrM = KrM {worlds :: Set World,
                 rel    :: Rel,
                 val    :: Val}
   deriving (Show)
-
-type Rel = Map World (Set World)
-type Val = Map World (Set Proposition)
-type Team = Set World
 
 rel' :: KrM -> World -> Set World
 rel' = (Map.!) . rel
