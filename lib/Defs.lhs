@@ -1,5 +1,5 @@
 
-\section{Basic Definitions}\label{sec:Defs}
+\section{Bilateral State-based Modal Logic}\label{sec:BSML}
 
 This section describes the basic definitions for the explicit model checker.
 
@@ -8,11 +8,13 @@ This section describes the basic definitions for the explicit model checker.
 {-# LANGUAGE FlexibleInstances #-}
 module Defs where
 
-import Control.Monad
-
-import Data.Set (Set, isSubsetOf, powerSet, unions, cartesianProduct, toList, member)
-
+-- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
+import Data.Set (Set, cartesianProduct)
 import qualified Data.Set as Set
+
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Test.QuickCheck
 
 type Proposition = Int
@@ -29,18 +31,23 @@ data Form
   | Dia Form
   deriving (Eq,Show)
 
-
-data KrM = KrM {
-  worlds :: Set World,
-  rel :: Rel,
-  val :: Val}
-
-type Rel = World -> Set World
-type Val = Proposition -> Set World
 type Team = Set World
+type Rel = Map World (Set World)
+type Val = Map World (Set Proposition)
+
+data KrM = KrM {worlds :: Set World,
+                rel    :: Rel,
+                val    :: Val}
+  deriving (Show)
+
+rel' :: KrM -> World -> Set World
+rel' = (Map.!) . rel
+
+val' :: KrM -> World -> Set Proposition
+val' = (Map.!) . val
 
 teamRel :: KrM -> Team -> Set World
-teamRel m s = unions $ Set.map (rel m) s
+teamRel m s = Set.unions $ Set.map (rel m Map.!) s
 
 class Supportable m s f where
   support :: m -> s -> f -> Bool
@@ -57,25 +64,25 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 
 teamParts :: Team -> Set (Team, Team)
-teamParts = join cartesianProduct . powerSet
+teamParts s = cartesianProduct (Set.powerSet s) (Set.powerSet s)
 
 instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
   (_,s) |= NE      = not (null s)
-  (m,s) |= Prop n  = s `isSubsetOf` val m n
+  (m,s) |= Prop n  = all (elem n) $ Set.map (val' m) s
   (m,s) |= Neg f   = (m,s) =| f
   (m,s) |= And f g = (m,s) |= f && (m,s) |= g
-  (m,s) |= Or f g  = any (\(t,u) -> Set.union t u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
-  (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . powerSet . rel m) s
+  (m,s) |= Or f g  = any (\(t,u) -> t <> u == s && (m,t) |= f && (m,u) |= g) $ teamParts s
+  (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . Set.powerSet . rel' m) s
 
 instance Antisupportable KrM Team Form where
   _     =| Bot     = True
   (_,s) =| NE      = null s
-  (m,s) =| Prop n  = Set.disjoint s (val m n)
+  (m,s) =| Prop n  = not . any (elem n) $ Set.map (val' m) s
   (m,s) =| Neg f   = (m,s) |= f
-  (m,s) =| And f g = any (\(t,u) -> Set.union t u == s && (m,t) =| f && (m,u) =| g) $ teamParts s
+  (m,s) =| And f g = any (\(t,u) -> t <> u == s && (m,t) =| f && (m,u) =| g) $ teamParts s
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
-  (m,s) =| Dia f   = all (\w -> (m, rel m w) =| f) s
+  (m,s) =| Dia f   = all (\w -> (m, rel' m w) =| f) s
 
 instance Supportable KrM Team [Form] where
   support = (all .) . support
@@ -116,24 +123,18 @@ genFunctionToSubset ws = do
 (!) i xs = xs !! (i `mod` length xs)
 
 instance Arbitrary KrM where
-  arbitrary = sized (\s -> do
-    ws <- Set.fromList <$> vectorOf s arbitrary
-    r <- genFunctionToSubset ws
-    v <- genFunctionToSubset ws
-    return (KrM ws r v))
+  arbitrary = sized (\n -> do
+    k <- choose (0, n)
+    let ws = Set.fromList [0..k]
+    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) arbitrary
+    return $ KrM ws r v)
 
 instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
   arbitrary = do
     m <- arbitrary
     s <- subsetOf (worlds m)
     return (m, s)
-
-relList :: KrM -> [(World, [World])]
-relList m = toList . Set.map ((,) <*> toList . rel m) $ worlds m
-
-instance Show KrM where
--- TODO: improve
-  show m@(KrM ws _ _) = "KrM (" ++ show ws ++ ") (" ++ show (relList m) ++ ") (*)"
 
 \end{code}
 Some example models.
@@ -149,20 +150,25 @@ w0  = 3
 u3 :: Set World
 u3 = Set.fromList [0..3]
 
-r3a, r3b, r3c :: World -> Set World
-r3a = const Set.empty
+r3a, r3b, r3c :: Map World (Set World)
+r3a = Map.fromSet (const Set.empty) u3
 
-r3b 2 = Set.fromList [wp, wpq]
-r3b 3 = Set.singleton wq
-r3b _ = Set.empty
+r3b = Map.fromSet r u3 where
+  r 2 = Set.fromList [wp, wpq]
+  r 3 = Set.singleton wq
+  r _ = Set.empty
 
-r3c 2 = Set.fromList [wp, wq]
-r3c _ = Set.empty
+r3c = Map.fromSet r u3 where
+  r 2 = Set.fromList [wp, wq]
+  r _ = Set.empty
 
-v3 :: Proposition -> Set World
-v3 1 = Set.fromList [wp, wpq]
-v3 2 = Set.fromList [wq, wpq]
-v3 _ = Set.empty
+v3 :: Map World (Set Proposition)
+v3 = Map.fromList [
+    (0, Set.singleton 1),
+    (1, Set.singleton 2),
+    (2, Set.fromList [1,2]),
+    (3, Set.empty)
+  ]
 
 m3a, m3b, m3c :: KrM
 m3a = KrM u3 r3a v3
@@ -172,8 +178,8 @@ m3c = KrM u3 r3c v3
 s3a1, s3a2, s3b, s3c :: Team
 s3a1 = Set.singleton wq
 s3a2 = Set.fromList [wp, wq]
-s3b = Set.fromList [wpq, w0]
-s3c = Set.singleton wpq
+s3b  = Set.fromList [wpq, w0]
+s3c  = Set.singleton wpq
 
 \end{code}
 
@@ -188,11 +194,12 @@ data MForm
   deriving (Eq,Show)
 
 instance Supportable KrM World MForm where
-  (m,w) |= MProp n  = w `member` val m n
+  (m,w) |= MProp n  = n `elem` val' m w
   (m,w) |= MNeg f   = not $ (m,w) |= f
   (m,w) |= MAnd f g = (m,w) |= f && (m,w) |= g
   (m,w) |= MOr f g  = (m,w) |= f || (m,w) |= g
-  (m,w) |= MDia f   = any (\v -> (m,v) |= f) $ rel m w
+  (m,w) |= MDia f   = any (\v -> (m,v) |= f) $ rel' m w
+
 
 -- Modal formulas are a subset of BSML-formulas
 toBSML :: MForm -> Form
@@ -202,7 +209,7 @@ toBSML (MAnd f g) = And (toBSML f) (toBSML g)
 toBSML (MOr f g)  = Or (toBSML f) (toBSML g)
 toBSML (MDia f)   = Dia (toBSML f)
 
--- In Aloni2024 it is indicated as []+
+-- In Aloni2024, this is indicated by []+
 enrich :: MForm -> Form
 enrich (MProp n)  = Prop n `And` NE
 enrich (MNeg f)   = Neg (enrich f) `And` NE
