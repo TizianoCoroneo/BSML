@@ -20,6 +20,23 @@ Note that the first test is a specific test with fixed inputs.
 The second and third test use QuickCheck.
 
 \begin{code}
+
+{--
+Properties to test for:
+Narrow-scope FC:
+\Diamond(\alpha\vee\beta)\vDash\Diamond\alpha\wedge\Diamond\beta
+
+Dual-prohibition:
+\neg\Diamond(\alpha\vee\beta)\vDash\neg\Diamond\alpha\wedge\neg\Diamond\beta
+
+Universal FC:
+\forall\Diamond(\alpha\vee\beta)\vDash\forall\Diamond\alpha\wedge\Diamond\beta
+
+Wide-scope FC:
+\Diamond\alpha\vee\beta\vDash\Diamond\alpha\wedge\Diamond\beta
+
+--}
+
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
