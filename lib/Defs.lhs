@@ -136,6 +136,36 @@ instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
     s <- subsetOf (worlds m)
     return (m, s)
 
+-- The proposition are picked in the range (1, maximumArbitraryMFormPropositions) for MForm,
+-- and from (1, maximumArbitraryMFormPropositions) for Form.
+-- We cannot use the QuickCheck size because it would introduce a bias in the generation of Proposition values,
+-- where small sized examples can only choose small valued Propositions.
+maximumArbitraryMFormPropositions :: Int
+maximumArbitraryMFormPropositions = 100
+
+maximumArbitraryFormPropositions :: Int
+maximumArbitraryFormPropositions = 100
+
+instance Arbitrary MForm where
+  arbitrary = oneof [
+      MProp <$> choose (1, maximumArbitraryMFormPropositions),
+      MNeg <$> scale (`div` 2) arbitrary,
+      MAnd <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
+      MOr <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
+      MDia <$> scale (`div` 2) arbitrary
+    ]
+
+instance Arbitrary Form where
+  arbitrary = oneof [
+      Prop <$> choose (1, maximumArbitraryFormPropositions),
+      pure NE,
+      pure Bot,
+      Neg <$> scale (`div` 2) arbitrary,
+      And <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
+      Or <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
+      Dia <$> scale (`div` 2) arbitrary
+    ]
+
 \end{code}
 Some example models.
 
