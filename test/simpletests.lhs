@@ -22,7 +22,8 @@ The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
 The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
-We test this to confirm our implementation matches the the basic functionality of BSML as described in the paper.
+The paper gives a couple formulas per example to ustrate the semantics of BSML. We test each of these formulas 
+to confirm our implementation contains the expected semantics.
 
 \begin{code}
 
@@ -79,8 +80,9 @@ This is necessary because the form by nature is exponential, and will expand unf
 
 \end{code}
 
-The paper \cite{Aloni2024} discusses two properties that must hold for our implementation of the "pragmatic enrichment function": 
-narrow-scope and wide-scope.
+The paper \cite{Aloni2024} discusses various properties that must hold for our implementation. 
+Narrow-scope and wide-scope relate to the "pragmatic enrichment function." 
+The flatness test confirms that our implementation of BSML formulas are flat.
 
 \begin{code}
 
@@ -90,8 +92,6 @@ narrow-scope and wide-scope.
       \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
       \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
-  
-
   describe "Flatness" $
     modifyMaxSize (`div` 10) $ do
     prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
