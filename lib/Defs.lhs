@@ -64,7 +64,12 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 
 teamParts :: Team -> Set (Team, Team)
-teamParts s = cartesianProduct (Set.powerSet s) (Set.powerSet s)
+teamParts s = Set.fromList $ do 
+    s' <- ps
+    s'' <- Set.toList $ Set.powerSet s'
+    let augmentedCompl = Set.difference s s''
+    return (s' :: Team, augmentedCompl)
+  where ps = Set.toList $ Set.powerSet s
 
 instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
