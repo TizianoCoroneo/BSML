@@ -24,23 +24,6 @@ The second and third test use QuickCheck.
 
 \begin{code}
 
-{--
-Properties to test for:
-Narrow-scope FC:
-\Diamond(\alpha\vee\beta)\vDash\Diamond\alpha\wedge\Diamond\beta
-
-Dual-prohibition:
-\neg\Diamond(\alpha\vee\beta)\vDash\neg\Diamond\alpha\wedge\neg\Diamond\beta
-
-Universal FC:
-\forall\Diamond(\alpha\vee\beta)\vDash\forall\Diamond\alpha\wedge\Diamond\beta
-
-Wide-scope FC:
-\Diamond\alpha\vee\beta\vDash\Diamond\alpha\wedge\Diamond\beta
-
---}
-
-
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
@@ -66,23 +49,21 @@ main = hspec $ do
       (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
-  describe "NarrowScope" $ do
-    it "NarrowScope , <>(a v b)" $
-      (mNS, sNS) |= Dia (p `Or` q) `shouldBe` True
-    it "NarrowScope , <>a ^ <>b" $
-      (mNS, sNS) |= (Dia p `And` Dia q) `shouldBe` True
-    it "NarrowScope falsified, <>(a v b)" $
-      (mNSF,sNSF) |= Dia (p `Or` q) `shouldBe` True
-    it "NarrowScope falsified, (<>a ^ <>b) should be false" $
-      (mNSF,sNSF) |= (Dia p `And` Dia q) `shouldBe` False
-  describe "Dual-Prohibition" $ do
-    prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
-      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+   
   describe "Tautologies" $ 
-    modifyMaxSize (`div` 10) $ do
+    modifyMaxSize (`div` 7) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-    
+  
+  describe "Properties from Paper" $ 
+    modifyMaxSize (`div` 7) $ do
+    prop "NarrowScope free choice when enriched, <>(a v b) =| (<>a ^ <>b)" $
+      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
+    prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
+      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+    prop "Wide Scope free choice when enriched, <>a v <>b) =| <>a ^ <>b" $
+      \(TPM m s) -> (m,s) |= enrich ((MDia mp) `MOr` (MDia mq)) == (m,s) |= enrich ((MDia mp) `MAnd` (MDia mq))
+
   describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
       \(TPM m s) -> (m,s) |= toptop
