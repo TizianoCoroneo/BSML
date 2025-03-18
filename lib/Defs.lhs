@@ -11,6 +11,7 @@ lists.
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 module Defs where
 
 -- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
@@ -196,31 +197,17 @@ bigor fs = foldr1 Or fs
 bigand :: [Form] -> Form
 bigand [] = toptop
 bigand fs = foldr1 And fs
-
 \end{code}
-
-\begin{code}
-
-subsetOf :: Ord a => Set a -> Gen (Set a)
-subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
-
-\end{code}
-
 The following code block implements the Arbitrary typeclass for models (KrM), pointed models (TeamPointedModel or WorldPointedModel), and formulas (both BML formulas in MForm, and BSML formulas in Form).
 
 We start by defining some parameters that will be used in the generators.
 
-The proposition are picked in the range (1, maximumArbitraryMFormPropositions) for MForm, and from (1, maximumArbitraryMFormPropositions) for Form.
-We cannot use the QuickCheck size because it would introduce a bias in the generation of Proposition values, where small sized examples can only choose small valued Propositions.
-
-arbitraryFormScaling is used to manage the scaling of the arbitrary formulas, while arbitraryPropScaling is used to manage the scaling of the count of supported propositions in the valuation function of a model.
-
 \begin{code}
-maximumArbitraryMFormPropositions :: Int
-maximumArbitraryMFormPropositions = 32
-
-maximumArbitraryFormPropositions :: Int
-maximumArbitraryFormPropositions = 32
+-- The proposition are picked in the range (1, numProps) for MForm and Form.
+-- We should not use the QuickCheck size paramater because it would introduce a bias in the generation of Proposition values,
+-- where small sized examples can only choose small valued Propositions.
+numProps :: Int
+numProps = 32
 
 arbitraryFormScaling :: Int
 arbitraryFormScaling = 10
@@ -229,25 +216,31 @@ arbitraryPropScaling :: Int
 arbitraryPropScaling = 5
 \end{code}
 
-The instance for a Kripke model KrM first generates an arbitrary set of worlds ws, from 0 to an arbitrary k; then, it generates an arbitrary Map world to subset of all worlds to represent the model relation. Finally, it generates the valuation map by picking an arbitrary list of propositions from the range (0, maximumArbitraryFormPropositions), where the count of item in the lists is scaled by arbitraryPropScaling down from the QuickCheck size parameter.
+The instance for a Kripke model KrM first generates an arbitrary set of worlds ws, from 0 to an arbitrary k;
+then, it generates an arbitrary Map world to subset of all worlds to represent the model relation.
+Finally, it generates the valuation Map by picking an arbitrary list of propositions from the range (0, numProps).
 
 \begin{code}
+subsetOf :: Ord a => [a] -> Gen (Set a)
+subsetOf = (Set.fromList <$>) . sublistOf
+
 instance Arbitrary KrM where
   arbitrary = sized (\n -> do
     k <- choose (0, n)
     let ws = Set.fromList [0..k]
-    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
-    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (Set.fromList <$> scale (`div` arbitraryPropScaling) (listOf (choose (0, maximumArbitraryFormPropositions))))
+    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf [0..k])
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf [1..numProps])
     return $ KrM ws r v)
 \end{code}
 
-In the instances for pointed models, we want to make sure that the team or world that we're focusing on is actually part of the model. We do that by picking a team or a world respectively as an arbitrary subset or element of the model's worlds.
+In the instances for pointed models, we want to make sure that the team or world that we're focusing on is actually part of the model.
+We do that by picking a team or a world respectively as an arbitrary subset or element of the model's worlds.
 
 \begin{code}
 instance Arbitrary TeamPointedModel where
   arbitrary = do
     m <- arbitrary
-    s <- subsetOf (worlds m)
+    s <- subsetOf $ Set.toList $ worlds m
     return $ TPM m s
 
 instance Arbitrary WorldPointedModel where
@@ -257,32 +250,39 @@ instance Arbitrary WorldPointedModel where
     return $ WPM m w
 \end{code}
 
-For the Arbitrary instance of the formulas, we check the size parameter: if it is 0, we choose a Proposition to terminate the recursion. Otherwise, we pick one of the other available operators that we can use in an arbitrary formula.
+For the Arbitrary instance of the formulas, we check the size parameter:
+if it is 0, we choose an atom to terminate the recursion.
+Otherwise, we pick one of the other available operators that we can use in an arbitrary formula.
 
 \begin{code}
+randomMProp :: Gen MForm
+randomMProp = MProp <$> choose (1, numProps)
+
 instance Arbitrary MForm where
-  arbitrary = sized arbitraryForm
-    where arbitraryForm 0 = MProp <$> choose (1, maximumArbitraryMFormPropositions)
-          arbitraryForm _ = oneof [
-            MProp <$> choose (1, maximumArbitraryMFormPropositions),
-            MNeg <$> f,
-            MAnd <$> f <*> f,
-            MOr <$> f <*> f,
-            MDia <$> f]
-          f = scale (`div` arbitraryFormScaling) arbitrary
+  arbitrary = sized $ \case
+    0 -> randomMProp
+    _ -> oneof [
+      randomMProp,
+      MNeg <$> f,
+      MAnd <$> f <*> f,
+      MOr  <$> f <*> f,
+      MDia <$> f]
+    where f = scale (`div` 2) arbitrary
+
+randomAtom :: Gen Form
+randomAtom = oneof [Prop <$> choose (1, numProps), pure NE, pure Bot]
 
 instance Arbitrary Form where
-  arbitrary = sized arbitraryForm
-    where arbitraryForm 0 = Prop <$> choose (1, maximumArbitraryMFormPropositions)
-          arbitraryForm _ = oneof [
-            Prop <$> choose (1, maximumArbitraryFormPropositions),
-            pure NE,
-            pure Bot,
-            Neg <$> f,
-            And <$> f <*> f,
-            Or <$> f <*> f,
-            Dia <$> f]
-          f = scale (`div` arbitraryFormScaling) arbitrary
+  arbitrary = sized $ \case
+    0 -> randomAtom
+    _ ->  oneof [
+        randomAtom,
+        Neg <$> f,
+        And <$> f <*> f,
+        Or  <$> f <*> f,
+        Dia <$> f
+      ]
+    where f = scale (`div` 2) arbitrary
 
 \end{code}
 Some example models.

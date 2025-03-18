@@ -10,6 +10,8 @@ module Main where
 
 import Defs
 
+import qualified Data.Set as Set
+
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
@@ -18,11 +20,11 @@ import qualified Data.Set as Set
 
 \end{code}
 
-The following uses the HSpec library to define different tests. 
+The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
-The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
-The paper gives a couple formulas per example to ustrate the semantics of BSML. We test each of these formulas 
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
+The paper gives a couple formulas per example to ustrate the semantics of BSML. We test each of these formulas
 to confirm our implementation contains the expected semantics.
 
 \begin{code}
@@ -55,14 +57,13 @@ main = hspec $ do
 
 \end{code}
 
-We will expand this section later, by adding more tautologies that should hold for BSML logic ensuring our implementation is correct. 
+We will expand this section later, by adding more tautologies that should hold for BSML logic ensuring our implementation is correct.
 here we use QuickCheck, but unfortunately we need to limit the max size of the arbitrary modals, team and forms we generate.
 This is necessary because the form by nature is exponential, and will expand unfeasibly quickly when evaluated.
 
 \begin{code}
 
-  describe "Tautologies" $ 
-    modifyMaxSize (`div` 7) $ do
+  describe "Tautologies" $ modifyMaxSize (`div` 10) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
@@ -71,7 +72,7 @@ This is necessary because the form by nature is exponential, and will expand unf
       \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
       \(TPM m s) -> not $ (m,s) |= botbot
-    modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
+    prop "p v ~p is never supported"  $
       \(TPM m s) -> (m,s) |= (p `Or` Neg p)
     prop "NE v ~NE does *can* be supported" $
       expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
@@ -80,36 +81,27 @@ This is necessary because the form by nature is exponential, and will expand unf
 
 \end{code}
 
-The paper \cite{Aloni2024} discusses various properties that must hold for our implementation. 
-Narrow-scope and wide-scope relate to the "pragmatic enrichment function." 
+The paper \cite{Aloni2024} discusses various properties that must hold for our implementation.
+Narrow-scope and wide-scope relate to the "pragmatic enrichment function."
 The flatness test confirms that our implementation of BSML formulas are flat.
 
 \begin{code}
 
-  describe "Properties from Paper" $ 
-    modifyMaxSize (`div` 7) $ do
+  describe "Properties from Paper" $ modifyMaxSize (const 10) $ do
     prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
       \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
       \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
-  describe "Flatness" $
-    modifyMaxSize (`div` 10) $ do
-    prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
+  describe "Flatness" $ modifyMaxSize (const 10) $ do
+    prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
-    prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
+    prop "M,{w} |= f <==> M,w |= f" $
       \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+    prop "Full BSML is *not* flat" $ expectFailure $
+      \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
   where
     p = Prop 1
     q = Prop 2
     mp = MProp 1
     mq = MProp 2
 \end{code}
-
-
-
-To run the tests, use \verb|stack test|.
-
-To also find out which part of your program is actually used for these tests,
-run \verb|stack clean && stack test --coverage|. Then look for ``The coverage
-report for ... is available at ... .html'' and open this file in your browser.
-See also: \url{https://wiki.haskell.org/Haskell_program_coverage}.
