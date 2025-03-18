@@ -24,7 +24,6 @@ We use a mix of QuickCheck and specific inputs, depending on what we are testing
 The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
 The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation contains the expected semantics.
 
-
 \begin{code}
 
 main :: IO ()
@@ -82,17 +81,8 @@ This is necessary because the evaluation of support in team semantics is inheren
     modifyMaxSize (`div` 7) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-  
-  describe "Properties from Paper" $ 
-    modifyMaxSize (`div` 7) $ do
-    prop "NarrowScope free choice when enriched, <>(a v b) =| (<>a ^ <>b)" $
-      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
-    prop "Wide Scope free choice when enriched, <>a v <>b) =| <>a ^ <>b" $
-      \(TPM m s) -> (m,s) |= enrich ((MDia mp) `MOr` (MDia mq)) == (m,s) |= enrich ((MDia mp) `MAnd` (MDia mq))
-
-  describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
       \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
@@ -117,6 +107,7 @@ The flatness test confirms that our implementation of ML formulas are flat.
       \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
       \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
+
   describe "Flatness" $ modifyMaxSize (const 10) $ do
     prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
