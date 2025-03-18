@@ -64,7 +64,7 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 
 teamParts :: Team -> Set (Team, Team)
-teamParts s = Set.fromList $ zip (Set.toList $ Set.powerSet s) (fmap (Set.difference s) (Set.toList $ Set.powerSet s))
+teamParts s = cartesianProduct (Set.powerSet s) (Set.powerSet s)
 
 instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
@@ -135,12 +135,15 @@ maximumArbitraryFormPropositions = 32
 arbitraryFormScaling :: Int 
 arbitraryFormScaling = 10
 
+arbitraryPropScaling :: Int
+arbitraryPropScaling = 5
+
 instance Arbitrary KrM where
   arbitrary = sized (\n -> do
     k <- choose (0, n)
     let ws = Set.fromList [0..k]
     r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
-    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (Set.fromList <$> scale (`div` 5) (listOf (choose (0, maximumArbitraryFormPropositions))))
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (Set.fromList <$> scale (`div` arbitraryPropScaling) (listOf (choose (0, maximumArbitraryFormPropositions))))
     return $ KrM ws r v)
 
 data TeamPointedModel = TPM KrM Team
@@ -166,11 +169,11 @@ instance Arbitrary MForm where
     where arbitraryForm 0 = MProp <$> choose (1, maximumArbitraryMFormPropositions)
           arbitraryForm s = oneof [
             MProp <$> choose (1, maximumArbitraryMFormPropositions),
-            MNeg <$> resize (s `div` arbitraryFormScaling) arbitrary,
-            MAnd <$> resize (s `div` arbitraryFormScaling) arbitrary <*> resize (s `div` arbitraryFormScaling) arbitrary,
-            MOr <$> resize (s `div` arbitraryFormScaling) arbitrary <*> resize (s `div` arbitraryFormScaling) arbitrary,
-            MDia <$> resize (s `div` arbitraryFormScaling) arbitrary]
-
+            MNeg <$> f,
+            MAnd <$> f <*> f,
+            MOr <$> f <*> f,
+            MDia <$> f]
+          f = scale (`div` arbitraryFormScaling) arbitrary
 
 instance Arbitrary Form where
   arbitrary = sized arbitraryForm
@@ -179,10 +182,11 @@ instance Arbitrary Form where
             Prop <$> choose (1, maximumArbitraryFormPropositions),
             pure NE,
             pure Bot,
-            Neg <$> scale (`div` arbitraryFormScaling) arbitrary,
-            And <$> scale (`div` arbitraryFormScaling) arbitrary <*> scale (`div` arbitraryFormScaling) arbitrary,
-            Or <$> scale (`div` arbitraryFormScaling) arbitrary <*> scale (`div` arbitraryFormScaling) arbitrary,
-            Dia <$> scale (`div` arbitraryFormScaling) arbitrary]
+            Neg <$> f,
+            And <$> f <*> f,
+            Or <$> f <*> f,
+            Dia <$> f]
+          f = scale (`div` arbitraryFormScaling) arbitrary
 
 \end{code}
 Some example models.

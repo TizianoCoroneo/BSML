@@ -99,8 +99,8 @@ main = hspec $ do
     modifyMaxSize (`div` 5) $ do
     prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
-    -- prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
-    --   \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+    prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
+      \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
   where
     p = Prop 1
     q = Prop 2
