@@ -8,6 +8,7 @@ This section describes the basic definitions for the explicit model checker.
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 module Defs where
 
 -- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
@@ -112,12 +113,12 @@ bigand :: [Form] -> Form
 bigand [] = toptop
 bigand fs = foldr1 And fs
 
-subsetOf :: Ord a => Set a -> Gen (Set a)
-subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
+subsetOf :: Ord a => [a] -> Gen (Set a)
+subsetOf = (Set.fromList <$>) . sublistOf
 
 genFunctionToSubset :: Ord a => CoArbitrary a => Set a -> Gen (Int -> Set a)
 genFunctionToSubset ws = do
-  outputs <- vectorOf (length ws) (subsetOf ws)
+  outputs <- vectorOf (length ws) (subsetOf $ Set.toList ws)
   fmap (\f x -> f x ! outputs) arbitrary
 
 (!) :: Int -> [Set a] -> Set a
@@ -128,15 +129,57 @@ instance Arbitrary KrM where
   arbitrary = sized (\n -> do
     k <- choose (0, n)
     let ws = Set.fromList [0..k]
-    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
-    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) arbitrary
+    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf [0..k])
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf [1..numProps])
     return $ KrM ws r v)
 
 instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
   arbitrary = do
     m <- arbitrary
-    s <- subsetOf (worlds m)
+    s <- subsetOf $ Set.toList $ worlds m
     return (m, s)
+
+instance {-# OVERLAPPING #-} Arbitrary (KrM, World) where
+  arbitrary = do
+    m <- arbitrary
+    s <- elements $ Set.toList $ worlds m
+    return (m, s)
+
+-- The proposition are picked in the range (1, numProps) for MForm and Form.
+-- We should not use the QuickCheck size paramater because it would introduce a bias in the generation of Proposition values,
+-- where small sized examples can only choose small valued Propositions.
+numProps :: Int
+numProps = 10
+
+randomMProp :: Gen MForm
+randomMProp = MProp <$> choose (1, numProps)
+
+instance Arbitrary MForm where
+  arbitrary = sized $ \case
+    0 -> randomMProp
+    _ -> oneof [
+      randomMProp,
+      MNeg <$> f,
+      MAnd <$> f <*> f,
+      MOr  <$> f <*> f,
+      MDia <$> f]
+    where f = scale (`div` 2) arbitrary
+
+
+randomAtom :: Gen Form
+randomAtom = oneof [Prop <$> choose (1, numProps), pure NE, pure Bot]
+
+instance Arbitrary Form where
+  arbitrary = sized $ \case
+    0 -> randomAtom
+    _ ->  oneof [
+        randomAtom,
+        Neg <$> f,
+        And <$> f <*> f,
+        Or  <$> f <*> f,
+        Dia <$> f
+      ]
+    where f = scale (`div` 2) arbitrary
 
 \end{code}
 Some example models.

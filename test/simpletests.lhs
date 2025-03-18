@@ -76,11 +76,12 @@ main = hspec $ do
     prop "strong tautology !== top" $
       expectFailure $ \(m,s) -> (m::KrM, s::Team) |= toptop == (m,s) |= top
   describe "Flatness" $ do
-    xprop "M,s |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" (undefined :: Property)
---      \m s f -> (m::KrM, s::Team) |= toBSML (f::MForm) ==
---        all (\w -> (m, Set.singleton w) |= toBSML f) s
-    xprop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" (undefined :: Property)
---      \m w f -> (m::KrM, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+    modifyMaxSize (const 10) $ prop "M,s |= f <==> M,{w} |= f forall w in s" $
+      \(m,s) f -> ((m::KrM, s::Team) |= toBSML f) == all (\w -> (m, Set.singleton w) |= toBSML f) s
+    modifyMaxSize (const 10) $ prop "M,{w} |= f <==> M,w |= f" $
+      \(m,w) f -> (m::KrM, Set.singleton w) |= toBSML f == (m,w :: World) |= f
+    modifyMaxSize (const 10) $ prop "Full BSML is *not* flat" $ expectFailure $
+      \(m,s) f -> ((m::KrM, s::Team) |= (f :: Form)) == all (\w -> (m, Set.singleton w) |= f) s
   describe "Monotone?" $ do
     prop "testinganidea" $
       \(m,s) f -> support (m::KrM) (s::Team) (f::Form) <= all (\t -> null t || (m,t) |= f) (Set.powerSet s)
