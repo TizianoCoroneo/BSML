@@ -1,9 +1,12 @@
 
-\section{Bilateral State-based Modal Logic}\label{sec:BSML}
+\section{Bilateral State-Based Modal Logic}\label{sec:BSML}
 
 
 
-This section describes the basic definitions for the explicit model checker.
+This section describes the basic definitions for the explicit model checker for Bilateral State-Based Modal Logic (henceforth BSML). We begin by importing modules necessary
+for this. Unlike previous model checkers we have seen (which use lists), we utilise sets in our models. We do this to
+prepare for the eventuality of using IntSets - which are a much more efficient structure for storing and retrieving integers than
+lists.
 
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -18,6 +21,12 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Test.QuickCheck
+\end{code}
+
+We establish the data type \texttt{Form}, which we use to describe BSML formulae. We later establish the data type
+\texttt{MForm} to describe modal formulae in the basic modal language.
+
+\begin{code}
 
 type Proposition = Int
 type World = Int
@@ -33,6 +42,15 @@ data Form
   | Dia Form
   deriving (Eq,Show)
 
+\end{code}
+
+BSML relies on team semantics, and a team is a set of worlds. A model in this logic (much like one in modal logics like $\mathsf{K}$ or $\mathsf{S4}$)
+consists of a set of worlds, a relation on the set of worlds and a valuation function; which tells us which propositions are true at a
+given world. We store the relation as a function from the set of Worlds to the powerset of Worlds - it is effectively a successor function.
+This gives us easy access to the successors of any given world, without needing to perform lookup operations for the same.
+
+\begin{code}
+
 type Team = Set World
 type Rel = Map World (Set World)
 type Val = Map World (Set Proposition)
@@ -47,6 +65,12 @@ data TeamPointedModel = TPM KrM Team
 
 data WorldPointedModel = WPM KrM World
   deriving (Show)
+\end{code}
+
+We define below \texttt{rel'} and \texttt{val'}; two functions that help us get the successors of a particular world in a model,
+and the propositions true at a given world in the model respectively.
+
+\begin{code}
 
 rel' :: KrM -> World -> Set World
 rel' = (Map.!) . rel
@@ -54,8 +78,25 @@ rel' = (Map.!) . rel
 val' :: KrM -> World -> Set Proposition
 val' = (Map.!) . val
 
+\end{code}
+
+Finally, we describe a function that gives us the successors of all worlds in a given team.
+
+\begin{code}
+
 teamRel :: KrM -> Team -> Set World
 teamRel m s = Set.unions $ Set.map (rel m Map.!) s
+
+\end{code}
+
+We define now notions of supportability and antisupportability for formulae with respect to a model and a team. Supportability's closest
+analogue in more familiar logics is $\vDash$, although the definition varies slightly since we now have a new-operator (\texttt{NE} or non-empty)
+to contend with. Antisupportability is defined analogously to negation as will be evident below.
+
+We also define classes \texttt{Supportable} and \texttt{Antisupportable}, and present two alternate definitions of the support (and dually, the antisupport)
+function. The minimal definition for the class only requires one of these to be provided; the other is the curried/uncurried equivalent.
+
+\begin{code}
 
 class Supportable m s f where
   support :: m -> s -> f -> Bool
@@ -70,9 +111,18 @@ class Antisupportable m s f where
 
   (=|) :: (m, s) -> f -> Bool
   (=|) = uncurry antisupport
+\end{code}
 
+We define now the semantics for BSML. For more detail, the reader may refer to page 5 of \cite{Aloni2024}, but the gist of it is
+that most of the definitions would be familiar to any reader well-versed in modal logics such as $\mathsf{K}$. From below, it should
+become clear why we mentioned earlier that \texttt{antisupport} acts like negation.
+
+Defining the semantics of $\lor$ for \texttt{support} and $\land$ for \texttt{antisupport} required us to use a helper function - \texttt{teamParts}.
+This function provides computes set of all pairs of subsets whose union is a given team $s$.
+
+\begin{code}
 teamParts :: Team -> Set (Team, Team)
-teamParts s = Set.fromList $ do 
+teamParts s = Set.fromList $ do
     s' <- ps
     s'' <- Set.toList $ Set.powerSet s'
     let augmentedCompl = Set.difference s s''
@@ -97,11 +147,29 @@ instance Antisupportable KrM Team Form where
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel' m w) =| f) s
 
+\end{code}
+
+One may also easily extend the above semantics to lists of formulae, as shown below.
+
+\begin{code}
+
 instance Supportable KrM Team [Form] where
   support = (all .) . support
 
 instance Antisupportable KrM Team [Form] where
   antisupport = (all .) . antisupport
+
+\end{code}
+
+We write first a function that describes $\Box$ formulae - much like in several standard modal logics, $\Box \varphi \equiv \neg \lozenge \neg \varphi$
+for any formula $\varphi$.
+
+We note that $\bot$ as defined here is only false on all non-empty teams. It is therefore referred to in \cite{Aloni2024} as the
+\textit{weak contradiction}. The strong contradiction (referred to in \cite{Aloni2024} as $\botbot$) is the formula $\bot \land \texttt{NE}$, which
+is called \texttt{botbot} below. Dually, the formula \texttt{NE} serves as the \textit{weak tautology} here; it is true
+on all non-empty teams. The formula $\toptop \coloneqq \neg \bot$ is true everywhere, and is therefore called the \textit{strong tautology}.
+
+\begin{code}
 
 box :: Form -> Form
 box = Neg . Dia . Neg
@@ -115,6 +183,12 @@ top = NE
 toptop :: Form
 toptop = Neg Bot
 
+\end{code}
+
+We may use the above to interpret empty disjunctions and conjunctions as below:
+
+\begin{code}
+
 bigor :: [Form] -> Form
 bigor [] = Bot
 bigor fs = foldr1 Or fs
@@ -122,6 +196,10 @@ bigor fs = foldr1 Or fs
 bigand :: [Form] -> Form
 bigand [] = toptop
 bigand fs = foldr1 And fs
+
+\end{code}
+
+\begin{code}
 
 subsetOf :: Ord a => Set a -> Gen (Set a)
 subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
@@ -144,7 +222,7 @@ maximumArbitraryMFormPropositions = 32
 maximumArbitraryFormPropositions :: Int
 maximumArbitraryFormPropositions = 32
 
-arbitraryFormScaling :: Int 
+arbitraryFormScaling :: Int
 arbitraryFormScaling = 10
 
 arbitraryPropScaling :: Int
@@ -306,7 +384,7 @@ mNSF = KrM uNSF rNSF vNSF
 sNSF :: Team
 sNSF  = Set.fromList [wNSF1, wNSF2]
 
--- Lara TautologyBoxDEF 
+-- Lara TautologyBoxDEF
 wBa, wBb, wBc, wBd, wBbc, wBe, wBcd :: Int
 wBa = 0
 wBb = 1
