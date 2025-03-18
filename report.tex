@@ -17,10 +17,10 @@ We implement an explicit model checker for bilateral state-based modal logic
 Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
 interpretations that verify a sentence by empty configuration  (\textit{neglect-zero tendency}).
 \end{abstract}
-    
+
 Free-Choice (\textit{FC}) inferences are instances of conjunctive meaning being unexpectedly
 derived from a disjunctive sentence. In the following example, a modalized disjunction yields
-a conjunction of modals. 
+a conjunction of modals.
 
 \begin{itemize}
 \item You may go to the beach or to the cinema $\rightsquigarrow$ You may go to the beach
@@ -51,7 +51,7 @@ $b\vee c$ is assertable
 disjuncts is supported in a substate. $b$ is supported in $W_b$, and $c$ is supported in the empty state.
 \item In a state consisting of $W_z$ and $W_b$ (and any other state which includes $W_z$), $b\vee c$ is
 \textit{not} assertable because in $W_z$ both $b$ and $c$ are false, so this state would leave open the
-possibility that neither $b$ nor $c$ is the case. 
+possibility that neither $b$ nor $c$ is the case.
 \end{enumerate}
 
 So among the four types of states, $b\vee c$ is assertable in all but the last. This is a problem, because if
@@ -66,7 +66,7 @@ because the only states that would support $b\vee c$ would be (1) or (2). To mod
 sure that $b\vee c$ is not assertable in the zero-model), we require that to satisfy a disjunction, the state
 must be the union of two non-empty substates rather than just the union of two substates. So we enrich each
 formula with a $[]^+$ function which conjuncts the non-emptiness atom (NE) to each formula and all its
-subformulas. 
+subformulas.
 
 After enrichment, the disjunction $b\vee c$ is no longer assertable in a state consisting of only $W_b$
 (or a state consisting of only $W_c$) since the non-emptiness atom (NE) would not be supported in all the substates.
