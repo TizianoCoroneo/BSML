@@ -15,29 +15,19 @@ import qualified Data.Set as Set
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
+
+import qualified Data.Set as Set
+
 \end{code}
 
 The following uses the HSpec library to define different tests.
-Note that the first test is a specific test with fixed inputs.
-The second and third test use QuickCheck.
+We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
+
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
+The paper gives a couple formulas per example to ustrate the semantics of BSML. We test each of these formulas
+to confirm our implementation contains the expected semantics.
 
 \begin{code}
-
-{--
-Properties to test for:
-Narrow-scope FC:
-\Diamond(\alpha\vee\beta)\vDash\Diamond\alpha\wedge\Diamond\beta
-
-Dual-prohibition:
-\neg\Diamond(\alpha\vee\beta)\vDash\neg\Diamond\alpha\wedge\neg\Diamond\beta
-
-Universal FC:
-\forall\Diamond(\alpha\vee\beta)\vDash\forall\Diamond\alpha\wedge\Diamond\beta
-
-Wide-scope FC:
-\Diamond\alpha\vee\beta\vDash\Diamond\alpha\wedge\Diamond\beta
-
---}
 
 main :: IO ()
 main = hspec $ do
@@ -64,38 +54,54 @@ main = hspec $ do
       (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
-  describe "Abbreviations" $ do
-    prop "strong tautology is always supported" $
-      \(m,s) -> (m::KrM, s::Team) |= toptop
-    prop "strong contradiction is never supported" $
-      \(m,s) -> not $ (m::KrM, s::Team) |= botbot
-    modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
-      \(m,s) -> (m::KrM, s::Team) |= (p `Or` Neg p)
-    prop "NE v ~NE does *can* be supported" $
-      expectFailure $ \(m,s) -> (m::KrM, s::Team) |= (top `Or` Neg top)
-    prop "strong tautology !== top" $
-      expectFailure $ \(m,s) -> (m::KrM, s::Team) |= toptop == (m,s) |= top
-  describe "Flatness" $ do
-    modifyMaxSize (const 10) $ prop "M,s |= f <==> M,{w} |= f forall w in s" $
-      \(m,s) f -> ((m::KrM, s::Team) |= toBSML f) == all (\w -> (m, Set.singleton w) |= toBSML f) s
-    modifyMaxSize (const 10) $ prop "M,{w} |= f <==> M,w |= f" $
-      \(m,w) f -> (m::KrM, Set.singleton w) |= toBSML f == (m,w :: World) |= f
-    modifyMaxSize (const 10) $ prop "Full BSML is *not* flat" $ expectFailure $
-      \(m,s) f -> ((m::KrM, s::Team) |= (f :: Form)) == all (\w -> (m, Set.singleton w) |= f) s
-  describe "Monotone?" $ do
-    prop "testinganidea" $
-      \(m,s) f -> support (m::KrM) (s::Team) (f::Form) <= all (\t -> null t || (m,t) |= f) (Set.powerSet s)
 
+\end{code}
+
+We will expand this section later, by adding more tautologies that should hold for BSML logic ensuring our implementation is correct.
+here we use QuickCheck, but unfortunately we need to limit the max size of the arbitrary modals, team and forms we generate.
+This is necessary because the form by nature is exponential, and will expand unfeasibly quickly when evaluated.
+
+\begin{code}
+
+  describe "Tautologies" $
+    modifyMaxSize (`div` 7) $ do
+    prop "box f <==> !<>!f" $
+      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
+    prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
+      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+    prop "strong tautology is always supported" $
+      \(TPM m s) -> (m,s) |= toptop
+    prop "strong contradiction is never supported" $
+      \(TPM m s) -> not $ (m,s) |= botbot
+    modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
+      \(TPM m s) -> (m,s) |= (p `Or` Neg p)
+    prop "NE v ~NE does *can* be supported" $
+      expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
+    prop "strong tautology !== top" $
+      expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
+
+\end{code}
+
+The paper \cite{Aloni2024} discusses various properties that must hold for our implementation.
+Narrow-scope and wide-scope relate to the "pragmatic enrichment function."
+The flatness test confirms that our implementation of BSML formulas are flat.
+
+\begin{code}
+
+  describe "Properties from Paper" $ modifyMaxSize (cons 10) $ do
+    prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
+      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
+    prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
+      \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
+  describe "Flatness" $
+    modifyMaxSize (`div` 10) $ do
+    prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
+      \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
+    prop "M,{w} |= f <==> M,w |= f" $
+      \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
   where
     p = Prop 1
     q = Prop 2
     mp = MProp 1
     mq = MProp 2
 \end{code}
-
-To run the tests, use \verb|stack test|.
-
-To also find out which part of your program is actually used for these tests,
-run \verb|stack clean && stack test --coverage|. Then look for ``The coverage
-report for ... is available at ... .html'' and open this file in your browser.
-See also: \url{https://wiki.haskell.org/Haskell_program_coverage}.
