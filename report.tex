@@ -17,24 +17,60 @@ We implement an explicit model checker for bilateral state-based modal logic
 Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
 interpretations that verify a sentence by empty configuration  (\textit{neglect-zero tendency}).
 \end{abstract}
-
+    
 Free-Choice (\textit{FC}) inferences are instances of conjunctive meaning being unexpectedly
 derived from a disjunctive sentence. In the following example, a modalized disjunction yields
 a conjunction of modals. 
 
-\begin{enumerate}
+\begin{itemize}
 \item You may go to the beach or to the cinema $\rightsquigarrow$ You may go to the beach
  and you may go to the cinema
 \item $\Diamond(b\vee c)\rightsquigarrow\Diamond b \wedge \Diamond c$
+\end{itemize}
+
+Aloni (2022) explain that in interpreting a sentence, a speaker identifies which are the structures of
+reality that would reflect the sentence (the models in which the sentence would be assertable).
+In our disjunction, there are four associated worlds:
+
+\begin{enumerate}
+\item $W_{bc}$ in which both $b$ and $c$ are true (you go to both the beach and the cinema)
+\item $W_b$ in which $b$ is true (you go to the beach)
+\item $W_c$ in which $c$ is true (you go to the cinema)
+\item $W_z$ in which neither $b$ nor $c$ is true (you don't go anywhere)
 \end{enumerate}
 
+We can use BSML to model the information states (i.e. sets of worlds) in which the disjunction $b\vee c$
+would be assertable. A proposition is assertable at a state $s$ if it is assertable in all its substates.
+A disjunction is assertable in a state $s$ if each of the disjuncts is supported in a substate of $s$.
 
-Such an inference is invalid in classical modal logic, since when $b$ is false and $c$ is true $\Diamond(b\vee c)$ is true but
-$\Diamond b \wedge \Diamond c$ is false. Yet the inference in FC makes perfect sense in natural language. How
-to account for the discrepancy then? Aloni (2022) explain FC inference as a consequence of the \textit{neglect-zero tendency},
-the cognitive preference for representations of reality that verify a sentence by concrete occurrences rather
-than an empty configuration. For example, though the sentence "I have no red hats" is verified both by a closet
-of blue hats and by a closet with no hats, "blue hats" is less cognitively taxing than "no hats", the zero-model.
+\begin{enumerate}
+\item In a state consisting of $W_b$ and $W_c$, $b\vee c$ is assertable
+\item In a state consisting of $W_{bc}$ and $W_b$ (or a state consisting of $W_{bc}$ and $W_c$),
+$b\vee c$ is assertable
+\item In a state consisting of $W_b$ (or a state consisting of $W_c$), $b\vee c$ is assertable since each of the
+disjuncts is supported in a substate. $b$ is supported in $W_b$, and $c$ is supported in the empty state.
+\item In a state consisting of $W_z$ and $W_b$ (and any other state which includes $W_z$), $b\vee c$ is
+\textit{not} assertable because in $W_z$ both $b$ and $c$ are false, so this state would leave open the
+possibility that neither $b$ nor $c$ is the case. 
+\end{enumerate}
+
+So among the four types of states, $b\vee c$ is assertable in all but the last. This is a problem, because if
+$b\vee c$ is assertable In a state consisting of only $W_b$ (or a state consisting of only $W_c$) then we have
+that $\Diamond(b\vee c)$ is true while $\Diamond b \wedge \Diamond c$ is false, so the FC inference fails. The
+problematic state, then, is the zero-model: one of the states which it uses to satisfy the disjunction is the
+empty state.
+
+How do we account for FC inferences then? Aloni argues pragmatically that a speaker would not consider the
+zero-model as one of the candidate states. Neglecting the zero model then, the FC inference would hold
+because the only states that would support $b\vee c$ would be (1) or (2). To model neglect-zero (to make
+sure that $b\vee c$ is not assertable in the zero-model), we require that to satisfy a disjunction, the state
+must be the union of two non-empty substates rather than just the union of two substates. So we enrich each
+formula with a $[]^+$ function which conjuncts the non-emptiness atom (NE) to each formula and all its
+subformulas. 
+
+After enrichment, the disjunction $b\vee c$ is no longer assertable in a state consisting of only $W_b$
+(or a state consisting of only $W_c$) since the non-emptiness atom (NE) would not be supported in all the substates.
+Finally then, if the only states in which the disjunction holds are (1) and (2), then the FC inference holds.
 
 \tableofcontents
 
