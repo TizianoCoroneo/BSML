@@ -64,7 +64,7 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 
 teamParts :: Team -> Set (Team, Team)
-teamParts s = cartesianProduct (Set.powerSet s) (Set.powerSet s)
+teamParts s = Set.fromList $ zip (Set.toList $ Set.powerSet s) (fmap (Set.difference s) (Set.toList $ Set.powerSet s))
 
 instance Supportable KrM Team Form where
   (_,s) |= Bot     = null s
@@ -122,49 +122,67 @@ genFunctionToSubset ws = do
 (!) _ [] = Set.empty
 (!) i xs = xs !! (i `mod` length xs)
 
-instance Arbitrary KrM where
-  arbitrary = sized (\n -> do
-    k <- choose (0, n)
-    let ws = Set.fromList [0..k]
-    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
-    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) arbitrary
-    return $ KrM ws r v)
-
-instance {-# OVERLAPPING #-} Arbitrary (KrM, Team) where
-  arbitrary = do
-    m <- arbitrary
-    s <- subsetOf (worlds m)
-    return (m, s)
-
 -- The proposition are picked in the range (1, maximumArbitraryMFormPropositions) for MForm,
 -- and from (1, maximumArbitraryMFormPropositions) for Form.
 -- We cannot use the QuickCheck size because it would introduce a bias in the generation of Proposition values,
 -- where small sized examples can only choose small valued Propositions.
 maximumArbitraryMFormPropositions :: Int
-maximumArbitraryMFormPropositions = 100
+maximumArbitraryMFormPropositions = 32
 
 maximumArbitraryFormPropositions :: Int
-maximumArbitraryFormPropositions = 100
+maximumArbitraryFormPropositions = 32
+
+arbitraryFormScaling :: Int 
+arbitraryFormScaling = 10
+
+instance Arbitrary KrM where
+  arbitrary = sized (\n -> do
+    k <- choose (0, n)
+    let ws = Set.fromList [0..k]
+    r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
+    v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (Set.fromList <$> scale (`div` 5) (listOf (choose (0, maximumArbitraryFormPropositions))))
+    return $ KrM ws r v)
+
+data TeamPointedModel = TPM KrM Team
+  deriving (Show)
+
+data WorldPointedModel = WPM KrM World
+  deriving (Show)
+
+instance Arbitrary TeamPointedModel where
+  arbitrary = do
+    m <- arbitrary
+    s <- subsetOf (worlds m)
+    return $ TPM m s
+
+instance Arbitrary WorldPointedModel where
+  arbitrary = do
+    m <- arbitrary
+    w <- elements (Set.toList $ worlds m)
+    return $ WPM m w
 
 instance Arbitrary MForm where
-  arbitrary = oneof [
-      MProp <$> choose (1, maximumArbitraryMFormPropositions),
-      MNeg <$> scale (`div` 2) arbitrary,
-      MAnd <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
-      MOr <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
-      MDia <$> scale (`div` 2) arbitrary
-    ]
+  arbitrary = sized arbitraryForm
+    where arbitraryForm 0 = MProp <$> choose (1, maximumArbitraryMFormPropositions)
+          arbitraryForm s = oneof [
+            MProp <$> choose (1, maximumArbitraryMFormPropositions),
+            MNeg <$> resize (s `div` arbitraryFormScaling) arbitrary,
+            MAnd <$> resize (s `div` arbitraryFormScaling) arbitrary <*> resize (s `div` arbitraryFormScaling) arbitrary,
+            MOr <$> resize (s `div` arbitraryFormScaling) arbitrary <*> resize (s `div` arbitraryFormScaling) arbitrary,
+            MDia <$> resize (s `div` arbitraryFormScaling) arbitrary]
+
 
 instance Arbitrary Form where
-  arbitrary = oneof [
-      Prop <$> choose (1, maximumArbitraryFormPropositions),
-      pure NE,
-      pure Bot,
-      Neg <$> scale (`div` 2) arbitrary,
-      And <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
-      Or <$> scale (`div` 2) arbitrary <*> scale (`div` 2) arbitrary,
-      Dia <$> scale (`div` 2) arbitrary
-    ]
+  arbitrary = sized arbitraryForm
+    where arbitraryForm 0 = Prop <$> choose (1, maximumArbitraryMFormPropositions)
+          arbitraryForm _ = oneof [
+            Prop <$> choose (1, maximumArbitraryFormPropositions),
+            pure NE,
+            pure Bot,
+            Neg <$> scale (`div` arbitraryFormScaling) arbitrary,
+            And <$> scale (`div` arbitraryFormScaling) arbitrary <*> scale (`div` arbitraryFormScaling) arbitrary,
+            Or <$> scale (`div` arbitraryFormScaling) arbitrary <*> scale (`div` arbitraryFormScaling) arbitrary,
+            Dia <$> scale (`div` arbitraryFormScaling) arbitrary]
 
 \end{code}
 Some example models.
@@ -210,6 +228,101 @@ s3a1 = Set.singleton wq
 s3a2 = Set.fromList [wp, wq]
 s3b  = Set.fromList [wpq, w0]
 s3c  = Set.singleton wpq
+
+-- Lara NarrowScope True
+wNSa, wNSb, wNS :: Int
+wNSa  = 0
+wNSb  = 1
+wNS = 2
+
+uNS :: Set World
+uNS = Set.fromList [0..2]
+
+rNS :: Map World (Set World)
+rNS = Map.fromSet r uNS where
+  r 2 = Set.fromList [wNSa, wNSb]
+  r _ = Set.empty
+
+vNS :: Map World (Set Proposition)
+vNS = Map.fromList [
+    (0, Set.singleton 1),
+    (1, Set.singleton 2),
+    (2, Set.empty)
+  ]
+
+mNS :: KrM
+mNS = KrM uNS rNS vNS
+
+sNS :: Team
+sNS  = Set.singleton wNS
+
+-- Lara NarrowScope False
+wNSF1, wNSF2 :: Int
+wNSF1 = 2
+wNSF2 = 3
+
+uNSF :: Set World
+uNSF = Set.fromList [0..3]
+
+rNSF :: Map World (Set World)
+rNSF = Map.fromSet r uNSF where
+  r 2 = Set.singleton wNSa
+  r 3 = Set.singleton wNSb
+  r _ = Set.empty
+
+vNSF :: Map World (Set Proposition)
+vNSF = Map.fromList [
+    (0, Set.singleton 1),
+    (1, Set.singleton 2),
+    (2, Set.empty),
+    (3, Set.empty)
+  ]
+
+mNSF :: KrM
+mNSF = KrM uNSF rNSF vNSF
+
+sNSF :: Team
+sNSF  = Set.fromList [wNSF1, wNSF2]
+
+-- Lara TautologyBoxDEF 
+wBa, wBb, wBc, wBd, wBbc, wBe, wBcd :: Int
+wBa = 0
+wBb = 1
+wBc = 2
+wBd = 3
+wBbc = 4
+wBe = 5
+wBcd = 6
+
+uB :: Set World
+uB = Set.fromList [0..6]
+
+rB :: Map World (Set World)
+rB = Map.fromSet r uB where
+  r 0 = Set.singleton wBd
+  r 1 = Set.fromList [wBe, wBd, wBc]
+  r 2 = Set.singleton wBc
+  r 4 = Set.singleton wBcd
+  r _ = Set.empty
+
+vB :: Map World (Set Proposition)
+vB = Map.fromList [
+    (0, Set.singleton 1),
+    (1, Set.singleton 2),
+    (2, Set.singleton 3),
+    (3, Set.singleton 4),
+    (4, Set.fromList [2, 3]),
+    (5, Set.singleton 5),
+    (6, Set.fromList [3, 4])
+  ]
+
+
+mB :: KrM
+mB = KrM uB rB vB
+
+sB :: Team
+sB  = Set.fromList [wBa, wBb, wBc]
+
 
 \end{code}
 

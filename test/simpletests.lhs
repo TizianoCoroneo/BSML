@@ -13,6 +13,9 @@ import Defs
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
+
+import qualified Data.Set as Set
+
 \end{code}
 
 The following uses the HSpec library to define different tests.
@@ -36,6 +39,7 @@ Wide-scope FC:
 \Diamond\alpha\vee\beta\vDash\Diamond\alpha\wedge\Diamond\beta
 
 --}
+
 
 main :: IO ()
 main = hspec $ do
@@ -62,29 +66,49 @@ main = hspec $ do
       (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
+  describe "NarrowScope" $ do
+    it "NarrowScope , <>(a v b)" $
+      (mNS, sNS) |= Dia (p `Or` q) `shouldBe` True
+    it "NarrowScope , <>a ^ <>b" $
+      (mNS, sNS) |= (Dia p `And` Dia q) `shouldBe` True
+    it "NarrowScope falsified, <>(a v b)" $
+      (mNSF,sNSF) |= Dia (p `Or` q) `shouldBe` True
+    it "NarrowScope falsified, (<>a ^ <>b) should be false" $
+      (mNSF,sNSF) |= (Dia p `And` Dia q) `shouldBe` False
+  describe "Dual-Prohibition" $ do
+    prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
+      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+  describe "Tautologies" $ 
+    modifyMaxSize (`div` 5) $ do
+    prop "box f <==> !<>!f" $
+      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
+    
   describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
-      \(m,s) -> (m::KrM, s::Team) |= toptop
+      \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
-      \(m,s) -> not $ (m::KrM, s::Team) |= botbot
+      \(TPM m s) -> not $ (m,s) |= botbot
     modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
-      \(m,s) -> (m::KrM, s::Team) |= (p `Or` Neg p)
+      \(TPM m s) -> (m,s) |= (p `Or` Neg p)
     prop "NE v ~NE does *can* be supported" $
-      expectFailure $ \(m,s) -> (m::KrM, s::Team) |= (top `Or` Neg top)
+      expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
     prop "strong tautology !== top" $
-      expectFailure $ \(m,s) -> (m::KrM, s::Team) |= toptop == (m,s) |= top
-  describe "Flatness" $ do
-    xprop "M,s |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" (undefined :: Property)
---      \m s f -> (m::KrM, s::Team) |= toBSML (f::MForm) ==
---        all (\w -> (m, Set.singleton w) |= toBSML f) s
-    xprop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" (undefined :: Property)
---      \m w f -> (m::KrM, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+      expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
+  
+  describe "Flatness" $
+    modifyMaxSize (`div` 5) $ do
+    prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
+      \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
+    -- prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
+    --   \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
   where
     p = Prop 1
     q = Prop 2
     mp = MProp 1
     mq = MProp 2
 \end{code}
+
+
 
 To run the tests, use \verb|stack test|.
 
