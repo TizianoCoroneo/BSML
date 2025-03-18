@@ -9,7 +9,7 @@ This section describes the basic definitions for the explicit model checker.
 module Defs where
 
 -- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
-import Data.Set (Set, cartesianProduct)
+import Data.Set (Set)
 import qualified Data.Set as Set
 
 import Data.Map (Map)
@@ -38,6 +38,12 @@ type Val = Map World (Set Proposition)
 data KrM = KrM {worlds :: Set World,
                 rel    :: Rel,
                 val    :: Val}
+  deriving (Show)
+
+data TeamPointedModel = TPM KrM Team
+  deriving (Show)
+
+data WorldPointedModel = WPM KrM World
   deriving (Show)
 
 rel' :: KrM -> World -> Set World
@@ -118,19 +124,18 @@ bigand fs = foldr1 And fs
 subsetOf :: Ord a => Set a -> Gen (Set a)
 subsetOf s = Set.fromList <$> sublistOf (Set.toList s)
 
-genFunctionToSubset :: Ord a => CoArbitrary a => Set a -> Gen (Int -> Set a)
-genFunctionToSubset ws = do
-  outputs <- vectorOf (length ws) (subsetOf ws)
-  fmap (\f x -> f x ! outputs) arbitrary
+\end{code}
 
-(!) :: Int -> [Set a] -> Set a
-(!) _ [] = Set.empty
-(!) i xs = xs !! (i `mod` length xs)
+The following code block implements the Arbitrary typeclass for models (KrM), pointed models (TeamPointedModel or WorldPointedModel), and formulas (both BML formulas in MForm, and BSML formulas in Form).
 
--- The proposition are picked in the range (1, maximumArbitraryMFormPropositions) for MForm,
--- and from (1, maximumArbitraryMFormPropositions) for Form.
--- We cannot use the QuickCheck size because it would introduce a bias in the generation of Proposition values,
--- where small sized examples can only choose small valued Propositions.
+We start by defining some parameters that will be used in the generators.
+
+The proposition are picked in the range (1, maximumArbitraryMFormPropositions) for MForm, and from (1, maximumArbitraryMFormPropositions) for Form.
+We cannot use the QuickCheck size because it would introduce a bias in the generation of Proposition values, where small sized examples can only choose small valued Propositions.
+
+arbitraryFormScaling is used to manage the scaling of the arbitrary formulas, while arbitraryPropScaling is used to manage the scaling of the count of supported propositions in the valuation function of a model.
+
+\begin{code}
 maximumArbitraryMFormPropositions :: Int
 maximumArbitraryMFormPropositions = 32
 
@@ -142,7 +147,11 @@ arbitraryFormScaling = 10
 
 arbitraryPropScaling :: Int
 arbitraryPropScaling = 5
+\end{code}
 
+The instance for a Kripke model KrM first generates an arbitrary set of worlds ws, from 0 to an arbitrary k; then, it generates an arbitrary Map world to subset of all worlds to represent the model relation. Finally, it generates the valuation map by picking an arbitrary list of propositions from the range (0, maximumArbitraryFormPropositions), where the count of item in the lists is scaled by arbitraryPropScaling down from the QuickCheck size parameter.
+
+\begin{code}
 instance Arbitrary KrM where
   arbitrary = sized (\n -> do
     k <- choose (0, n)
@@ -150,13 +159,11 @@ instance Arbitrary KrM where
     r <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (subsetOf ws)
     v <- Map.fromList . zip [0..k] <$> vectorOf (k+1) (Set.fromList <$> scale (`div` arbitraryPropScaling) (listOf (choose (0, maximumArbitraryFormPropositions))))
     return $ KrM ws r v)
+\end{code}
 
-data TeamPointedModel = TPM KrM Team
-  deriving (Show)
+In the instances for pointed models, we want to make sure that the team or world that we're focusing on is actually part of the model. We do that by picking a team or a world respectively as an arbitrary subset or element of the model's worlds.
 
-data WorldPointedModel = WPM KrM World
-  deriving (Show)
-
+\begin{code}
 instance Arbitrary TeamPointedModel where
   arbitrary = do
     m <- arbitrary
@@ -168,7 +175,11 @@ instance Arbitrary WorldPointedModel where
     m <- arbitrary
     w <- elements (Set.toList $ worlds m)
     return $ WPM m w
+\end{code}
 
+For the Arbitrary instance of the formulas, we check the size parameter: if it is 0, we choose a Proposition to terminate the recursion. Otherwise, we pick one of the other available operators that we can use in an arbitrary formula.
+
+\begin{code}
 instance Arbitrary MForm where
   arbitrary = sized arbitraryForm
     where arbitraryForm 0 = MProp <$> choose (1, maximumArbitraryMFormPropositions)
