@@ -77,11 +77,21 @@ This is necessary because the evaluation of support in team semantics is inheren
   describe "Dual-Prohibition" $ do
     prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+
   describe "Tautologies" $ 
-    modifyMaxSize (`div` 10) $ do
+    modifyMaxSize (`div` 7) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-    
+  
+  describe "Properties from Paper" $ 
+    modifyMaxSize (`div` 7) $ do
+    prop "NarrowScope free choice when enriched, <>(a v b) =| (<>a ^ <>b)" $
+      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
+    prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
+      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+    prop "Wide Scope free choice when enriched, <>a v <>b) =| <>a ^ <>b" $
+      \(TPM m s) -> (m,s) |= enrich ((MDia mp) `MOr` (MDia mq)) == (m,s) |= enrich ((MDia mp) `MAnd` (MDia mq))
+
   describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
       \(TPM m s) -> (m,s) |= toptop
