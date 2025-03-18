@@ -18,9 +18,11 @@ import qualified Data.Set as Set
 
 \end{code}
 
-The following uses the HSpec library to define different tests.
-Note that the first test is a specific test with fixed inputs.
-The second and third test use QuickCheck.
+The following uses the HSpec library to define different tests. 
+We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
+
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
+We test this to confirm our implementation matches the the basic functionality of BSML as described in the paper.
 
 \begin{code}
 
@@ -49,22 +51,21 @@ main = hspec $ do
       (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
-   
+
+\end{code}
+
+We will expand this section later, by adding more tautologies that should hold for BSML logic ensuring our implementation is correct. 
+here we use QuickCheck, but unfortunately we need to limit the max size of the arbitrary modals, team and forms we generate.
+This is necessary because the form by nature is exponential, and will expand unfeasibly quickly when evaluated.
+
+\begin{code}
+
   describe "Tautologies" $ 
     modifyMaxSize (`div` 7) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-  
-  describe "Properties from Paper" $ 
-    modifyMaxSize (`div` 7) $ do
-    prop "NarrowScope free choice when enriched, <>(a v b) =| (<>a ^ <>b)" $
-      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
-    prop "Wide Scope free choice when enriched, <>a v <>b) =| <>a ^ <>b" $
-      \(TPM m s) -> (m,s) |= enrich ((MDia mp) `MOr` (MDia mq)) == (m,s) |= enrich ((MDia mp) `MAnd` (MDia mq))
-
-  describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
       \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
@@ -75,7 +76,22 @@ main = hspec $ do
       expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
     prop "strong tautology !== top" $
       expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
+
+\end{code}
+
+The paper \cite{Aloni2024} discusses two properties that must hold for our implementation of the "pragmatic enrichment function": 
+narrow-scope and wide-scope.
+
+\begin{code}
+
+  describe "Properties from Paper" $ 
+    modifyMaxSize (`div` 7) $ do
+    prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
+      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
+    prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
+      \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
   
+
   describe "Flatness" $
     modifyMaxSize (`div` 10) $ do
     prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
