@@ -1,6 +1,8 @@
 
 \section{Bilateral State-based Modal Logic}\label{sec:BSML}
 
+
+
 This section describes the basic definitions for the explicit model checker.
 
 \begin{code}
