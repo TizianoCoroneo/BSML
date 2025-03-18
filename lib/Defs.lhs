@@ -240,7 +240,7 @@ We do that by picking a team or a world respectively as an arbitrary subset or e
 instance Arbitrary TeamPointedModel where
   arbitrary = do
     m <- arbitrary
-    s <- subsetOf (worlds m)
+    s <- subsetOf $ Set.toList $ worlds m
     return $ TPM m s
 
 instance Arbitrary WorldPointedModel where

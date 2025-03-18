@@ -63,8 +63,7 @@ This is necessary because the form by nature is exponential, and will expand unf
 
 \begin{code}
 
-  describe "Tautologies" $
-    modifyMaxSize (`div` 7) $ do
+  describe "Tautologies" $ modifyMaxSize (`div` 10) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
@@ -73,7 +72,7 @@ This is necessary because the form by nature is exponential, and will expand unf
       \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
       \(TPM m s) -> not $ (m,s) |= botbot
-    modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
+    prop "p v ~p is never supported"  $
       \(TPM m s) -> (m,s) |= (p `Or` Neg p)
     prop "NE v ~NE does *can* be supported" $
       expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
@@ -88,17 +87,18 @@ The flatness test confirms that our implementation of BSML formulas are flat.
 
 \begin{code}
 
-  describe "Properties from Paper" $ modifyMaxSize (cons 10) $ do
+  describe "Properties from Paper" $ modifyMaxSize (const 10) $ do
     prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
       \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
       \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
-  describe "Flatness" $
-    modifyMaxSize (`div` 10) $ do
+  describe "Flatness" $ modifyMaxSize (const 10) $ do
     prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
     prop "M,{w} |= f <==> M,w |= f" $
       \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+    prop "Full BSML is *not* flat" $ expectFailure $
+      \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
   where
     p = Prop 1
     q = Prop 2
