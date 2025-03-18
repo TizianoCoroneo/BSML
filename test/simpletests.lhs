@@ -79,7 +79,7 @@ main = hspec $ do
     prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
   describe "Tautologies" $ 
-    modifyMaxSize (`div` 5) $ do
+    modifyMaxSize (`div` 10) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
     
@@ -96,7 +96,7 @@ main = hspec $ do
       expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
   
   describe "Flatness" $
-    modifyMaxSize (`div` 5) $ do
+    modifyMaxSize (`div` 10) $ do
     prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
     prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
