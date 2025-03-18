@@ -10,6 +10,8 @@ module Main where
 
 import Defs
 
+import qualified Data.Set as Set
+
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
@@ -79,6 +81,10 @@ main = hspec $ do
 --        all (\w -> (m, Set.singleton w) |= toBSML f) s
     xprop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" (undefined :: Property)
 --      \m w f -> (m::KrM, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+  describe "Monotone?" $ do
+    prop "testinganidea" $
+      \(m,s) f -> support (m::KrM) (s::Team) (f::Form) <= all (\t -> null t || (m,t) |= f) (Set.powerSet s)
+
   where
     p = Prop 1
     q = Prop 2
