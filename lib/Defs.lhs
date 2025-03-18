@@ -1,12 +1,8 @@
-
 \section{Bilateral State-Based Modal Logic}\label{sec:BSML}
 
-
-
 This section describes the basic definitions for the explicit model checker for Bilateral State-Based Modal Logic (henceforth BSML). We begin by importing modules necessary
-for this. Unlike previous model checkers we have seen (which use lists), we utilise sets in our models. We do this to
-prepare for the eventuality of using IntSets - which are a much more efficient structure for storing and retrieving integers than
-lists.
+for this. Unlike previous model checkers we have seen, which use (association) lists, we utilise maps and sets in our models. 
+We do this to prepare for the eventuality of using IntSets and IntMaps - which are a much more efficient structure for storing and retrieving integers than lists.
 
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -45,10 +41,11 @@ data Form
 
 \end{code}
 
-BSML relies on team semantics, and a team is a set of worlds. A model in this logic (much like one in modal logics like $\mathsf{K}$ or $\mathsf{S4}$)
-consists of a set of worlds, a relation on the set of worlds and a valuation function; which tells us which propositions are true at a
-given world. We store the relation as a function from the set of Worlds to the powerset of Worlds - it is effectively a successor function.
-This gives us easy access to the successors of any given world, without needing to perform lookup operations for the same.
+BSML relies on team semantics, and a team is a set of worlds. A model in this logic is a standard Kripke model,
+consisting of a set of worlds, a relation on the set of worlds and a valuation function; which tells us which propositions are true at a
+given world. 
+We store the relation as a Map from Worlds to sets of Worlds.
+This gives us easy access to the successors of any given world, with cheap lookup thanks to using sets.
 
 \begin{code}
 
@@ -68,11 +65,9 @@ data WorldPointedModel = WPM KrM World
   deriving (Show)
 \end{code}
 
-We define below \texttt{rel'} and \texttt{val'}; two functions that help us get the successors of a particular world in a model,
-and the propositions true at a given world in the model respectively.
+We define below \texttt{rel'} and \texttt{val'}; two functions allow us to treat the Map-valued fields \verb|rel| and \verb|val| as (partial) functions.
 
 \begin{code}
-
 rel' :: KrM -> World -> Set World
 rel' = (Map.!) . rel
 
@@ -90,8 +85,8 @@ teamRel m s = Set.unions $ Set.map (rel m Map.!) s
 
 \end{code}
 
-We define now notions of supportability and antisupportability for formulae with respect to a model and a team. Supportability's closest
-analogue in more familiar logics is $\vDash$, although the definition varies slightly since we now have a new-operator (\texttt{NE} or non-empty)
+We define now notions of support and antisupport for formulae with respect to a model and a team. 
+Supportability's closest analogue in more familiar logics is $\vDash$, although the definition varies slightly since we now have a new operator (\textsc{NE} or non-empty)
 to contend with. Antisupportability is defined analogously to negation as will be evident below.
 
 We also define classes \texttt{Supportable} and \texttt{Antisupportable}, and present two alternate definitions of the support (and dually, the antisupport)
@@ -114,12 +109,11 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 \end{code}
 
-We define now the semantics for BSML. For more detail, the reader may refer to page 5 of \cite{Aloni2024}, but the gist of it is
-that most of the definitions would be familiar to any reader well-versed in modal logics such as $\mathsf{K}$. From below, it should
-become clear why we mentioned earlier that \texttt{antisupport} acts like negation.
+We define now the semantics for BSML. For more detail, the reader may refer to page 5 of \cite{Aloni2024}. 
+The support-relation should look familiar for any readed well-versed in state-based modal logics, with the addition of the \textsc{NE}-atom and using the dual antisupport-relation to model negation (i.e. refutation of a formula).
 
 Defining the semantics of $\lor$ for \texttt{support} and $\land$ for \texttt{antisupport} required us to use a helper function - \texttt{teamParts}.
-This function provides computes set of all pairs of subsets whose union is a given team $s$.
+This function computes set of all pairs of subsets whose union is a given team $s$.
 
 \begin{code}
 teamParts :: Team -> Set (Team, Team)
@@ -153,7 +147,6 @@ instance Antisupportable KrM Team Form where
 One may also easily extend the above semantics to lists of formulae, as shown below.
 
 \begin{code}
-
 instance Supportable KrM Team [Form] where
   support = (all .) . support
 
@@ -204,16 +197,10 @@ We start by defining some parameters that will be used in the generators.
 
 \begin{code}
 -- The proposition are picked in the range (1, numProps) for MForm and Form.
--- We should not use the QuickCheck size paramater because it would introduce a bias in the generation of Proposition values,
--- where small sized examples can only choose small valued Propositions.
+-- We do not use the size parameter because it would introduce a bias in the occurence of 
+-- Propositions, where e.g. more nested subformulas will not contain high propositions.
 numProps :: Int
 numProps = 32
-
-arbitraryFormScaling :: Int
-arbitraryFormScaling = 10
-
-arbitraryPropScaling :: Int
-arbitraryPropScaling = 5
 \end{code}
 
 The instance for a Kripke model KrM first generates an arbitrary set of worlds ws, from 0 to an arbitrary k;

@@ -24,11 +24,9 @@ The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
 The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
-The paper gives a couple formulas per example to ustrate the semantics of BSML. We test each of these formulas
-to confirm our implementation contains the expected semantics.
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation contains the expected semantics.
 
 \begin{code}
-
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
@@ -58,11 +56,10 @@ main = hspec $ do
 \end{code}
 
 We will expand this section later, by adding more tautologies that should hold for BSML logic ensuring our implementation is correct.
-here we use QuickCheck, but unfortunately we need to limit the max size of the arbitrary modals, team and forms we generate.
-This is necessary because the form by nature is exponential, and will expand unfeasibly quickly when evaluated.
+Here we use QuickCheck, but we need to limit the maximal size of the arbitrary models we generate.
+This is necessary because the evaluation of support in team semantics is inherently exponential in complexity (see e.g. the clause for support of disjunctions).
 
 \begin{code}
-
   describe "Tautologies" $ modifyMaxSize (`div` 10) $ do
     prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
@@ -81,9 +78,9 @@ This is necessary because the form by nature is exponential, and will expand unf
 
 \end{code}
 
-The paper \cite{Aloni2024} discusses various properties that must hold for our implementation.
+The paper \cite{Aloni2024} discusses various interesting properties that should hold for our implementation.
 Narrow-scope and wide-scope relate to the "pragmatic enrichment function."
-The flatness test confirms that our implementation of BSML formulas are flat.
+The flatness test confirms that our implementation of ML formulas are flat.
 
 \begin{code}
 
