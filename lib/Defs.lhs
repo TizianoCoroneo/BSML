@@ -167,7 +167,7 @@ instance Arbitrary WorldPointedModel where
 instance Arbitrary MForm where
   arbitrary = sized arbitraryForm
     where arbitraryForm 0 = MProp <$> choose (1, maximumArbitraryMFormPropositions)
-          arbitraryForm s = oneof [
+          arbitraryForm _ = oneof [
             MProp <$> choose (1, maximumArbitraryMFormPropositions),
             MNeg <$> f,
             MAnd <$> f <*> f,
