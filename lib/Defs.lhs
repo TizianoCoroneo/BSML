@@ -18,6 +18,12 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Test.QuickCheck
+import Text.Parsec
+import Text.Parsec.String
+import qualified Text.Parsec.Expr as Expr
+import Data.Char
+import Data.Functor.Identity (Identity)
+
 \end{code}
 
 We establish the data type \texttt{Form}, which we use to describe BSML formulae. We later establish the data type
@@ -446,4 +452,49 @@ enrich (MNeg f)   = Neg (enrich f) `And` NE
 enrich (MDia f)   = Dia (enrich f) `And` NE
 enrich (MAnd f g) = (enrich f `And` enrich g) `And` NE
 enrich (MOr f g)  = (enrich f `Or`  enrich g) `And` NE
+
+\end{code}
+
+Implementation of a parser with Parsec.
+
+\begin{code}
+
+-- from: https://jakewheat.github.io/intro_to_parsing
+
+formParser :: Parser Form
+formParser = Expr.buildExpressionParser parseTable parseTerm
+
+parseTable :: Expr.OperatorTable String () Identity Form
+parseTable = [
+  [Expr.Prefix (Neg <$ symbol "!")],
+  [
+    Expr.Prefix (Dia <$ symbol "<>")
+    -- Expr.Prefix (Box? <$ symbol "[]"), -- How to do this? We would like to accept the box operator, but it's not part of the grammar.
+  ],
+  [
+    Expr.Infix (And <$ symbol "&") Expr.AssocLeft,
+    Expr.Infix (Or <$ symbol "V") Expr.AssocLeft
+  ]]
+
+parseTerm :: Parser Form
+parseTerm = parseProp <|> parseBottom <|> parseNE <|> parens
+
+parseProp :: Parser Form
+parseProp = Prop <$> integer
+
+parseBottom :: Parser Form
+parseBottom = Bot <$ symbol "BOT"
+
+parseNE :: Parser Form
+parseNE = NE <$ symbol "NE"
+
+symbol :: String -> Parser String
+symbol s = string s <* spaces
+
+integer :: Parser Int
+integer = read <$> (many1 digit) <* spaces
+
+parens :: Parser Form
+parens = between (symbol "(") (symbol ")") formParser
+
 \end{code}
