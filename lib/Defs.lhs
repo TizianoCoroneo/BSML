@@ -1,7 +1,7 @@
 \section{Bilateral State-Based Modal Logic}\label{sec:BSML}
 
 This section describes the basic definitions for the explicit model checker for Bilateral State-Based Modal Logic (henceforth BSML). We begin by importing modules necessary
-for this. Unlike previous model checkers we have seen, which use (association) lists, we utilise maps and sets in our models. 
+for this. Unlike previous model checkers we have seen, which use (association) lists, we utilise maps and sets in our models.
 We do this to prepare for the eventuality of using IntSets and IntMaps - which are a much more efficient structure for storing and retrieving integers than lists.
 
 \begin{code}
@@ -9,6 +9,7 @@ We do this to prepare for the eventuality of using IntSets and IntMaps - which a
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 module Defs where
+
 
 -- Potential TODO: Change Set to IntSet (and Map to IntMap) for performance.
 import Data.Set (Set)
@@ -43,7 +44,7 @@ data Form
 
 BSML relies on team semantics, and a team is a set of worlds. A model in this logic is a standard Kripke model,
 consisting of a set of worlds, a relation on the set of worlds and a valuation function; which tells us which propositions are true at a
-given world. 
+given world.
 We store the relation as a Map from Worlds to sets of Worlds.
 This gives us easy access to the successors of any given world, with cheap lookup thanks to using sets.
 
@@ -81,11 +82,11 @@ Finally, we describe a function that gives us the successors of all worlds in a 
 \begin{code}
 
 teamRel :: KrM -> Team -> Set World
-teamRel m s = Set.unions $ Set.map (rel m Map.!) s
+teamRel m s = Set.unions $ Set.map (rel' m) s
 
 \end{code}
 
-We define now notions of support and antisupport for formulae with respect to a model and a team. 
+We define now notions of support and antisupport for formulae with respect to a model and a team.
 Supportability's closest analogue in more familiar logics is $\vDash$, although the definition varies slightly since we now have a new operator (\textsc{NE} or non-empty)
 to contend with. Antisupportability is defined analogously to negation as will be evident below.
 
@@ -109,7 +110,7 @@ class Antisupportable m s f where
   (=|) = uncurry antisupport
 \end{code}
 
-We define now the semantics for BSML. For more detail, the reader may refer to page 5 of \cite{Aloni2024}. 
+We define now the semantics for BSML. For more detail, the reader may refer to page 5 of \cite{Aloni2024}.
 The support-relation should look familiar for any readed well-versed in state-based modal logics, with the addition of the \textsc{NE}-atom and using the dual antisupport-relation to model negation (i.e. refutation of a formula).
 
 Defining the semantics of $\lor$ for \texttt{support} and $\land$ for \texttt{antisupport} required us to use a helper function - \texttt{teamParts}.
@@ -197,7 +198,7 @@ We start by defining some parameters that will be used in the generators.
 
 \begin{code}
 -- The proposition are picked in the range (1, numProps) for MForm and Form.
--- We do not use the size parameter because it would introduce a bias in the occurence of 
+-- We do not use the size parameter because it would introduce a bias in the occurence of
 -- Propositions, where e.g. more nested subformulas will not contain high propositions.
 numProps :: Int
 numProps = 32
