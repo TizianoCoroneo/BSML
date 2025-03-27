@@ -8,7 +8,9 @@ and test some properties.
 \begin{code}
 module Main where
 
-import Defs
+import Semantics
+import Syntax
+import ML
 
 import qualified Data.Set as Set
 import Test.Hspec

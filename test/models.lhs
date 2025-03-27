@@ -8,7 +8,9 @@ and test some properties.
 \begin{code}
 module Models where
 
-import Defs
+import Semantics
+import Syntax
+import ML
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -77,6 +79,7 @@ import qualified Data.Set as Set
 \label{3c}
 \end{figure}
 
+\begin{code}
 
 -- Aloni2024 - Figure 3.
 w0, wp, wq, wpq :: Int
@@ -122,7 +125,6 @@ s3c  = Set.singleton wpq
 
 
 
-\begin{code}
 --MOTIVATING EXAMPLE--
 
 wmA, wmB, wmAB, wmE :: Int
