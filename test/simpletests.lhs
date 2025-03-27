@@ -10,7 +10,9 @@ module Main where
 
 import Defs
 
-import Test.Hspec
+import Models
+
+import Test.Hspec ( hspec, describe, it, shouldBe )
 import Test.Hspec.QuickCheck
 
 import qualified Data.Set as Set
@@ -20,9 +22,9 @@ import qualified Data.Set as Set
 The following uses the HSpec library to define different tests. 
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
-The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
-The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas 
-to confirm our implementation contains the expected semantics.
+The "Figure 3" section corresponds to the examples 3b and 3c \cite{Aloni2024}. 
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test the formulas that use enrich 
+to confirm our implementation has the expected behavior.
 
 \begin{code}
 
@@ -30,9 +32,31 @@ main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
     it "Figure 3b, [<>(p ^ q)]+" $
-      (m3b, s3b) |= enrich (MDia (mp `MOr` mq)) `shouldBe` False
+      (m3b, s3b) |= enrich (MDia (ma `MOr` mb)) `shouldBe` False
     it "Figure 3c, [<>(p v q)]+" $
-      (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
+      (m3c, s3c) |= enrich (MDia (ma `MOr` mb)) `shouldBe` True
+
+  describe "Motivating Example" $ do
+    it "(a) |= (a v b) == True" $
+      (mM, sMA) |= toBSML (ma `MAnd` mb) `shouldBe` True
+    it "(a) |= [a v b]+  == True" $
+      (mM, sMA) |= (a `And` b) `shouldBe` True
+
+    it "(b) |= (a v b) == True" $
+      (mM, sMB) |= toBSML (ma `MAnd` mb) `shouldBe` True
+    it "(b) |= [a v b]+ == True" $
+      (mM, sMB) |= (a `And` b) `shouldBe` True
+
+    it "(c) |= (a v b) == True" $
+      (mM, sMC) |= toBSML (ma `MAnd` mb) `shouldBe` True
+    it "(c) |= [a v b]+ == False" $
+      (mM, sMC) |= (a `And` b) `shouldBe` False
+
+    it "(d) |= (a v b) == False" $
+      (mM, sMD) |= toBSML (ma `MAnd` mb) `shouldBe` False
+    it "(d) |= [a v b]+  == False" $
+      (mM, sMD) |= (a `And` b) `shouldBe` False
+
 
 \end{code}
 
@@ -44,20 +68,22 @@ The flatness test confirms that our implementation of BSML formulas are flat.
 \begin{code}
 
   describe "Properties from Paper" $ 
-    modifyMaxSize (`div` 7) $ do
+    modifyMaxSize (const 12) $ do
     prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
-      \(TPM m s) -> (m,s) |= enrich (MDia (mp `MOr` mq)) == (m,s) |= enrich (MDia mp `MAnd` MDia mq)
+      \(TPM m s) -> (m,s) |= enrich (MDia (ma `MOr` mb)) == (m,s) |= enrich (MDia ma `MAnd` MDia mb)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
-      \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia mp `MOr` MDia mq) <= (m,s) |= enrich (MDia mp `MAnd` MDia mq))
+      \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia ma `MOr` MDia mb) <= (m,s) |= enrich (MDia ma `MAnd` MDia mb))
   describe "Flatness" $
-    modifyMaxSize (`div` 10) $ do
+    modifyMaxSize (const 10) $ do
     prop "ex.1 (M,s) |= f <==> M,{w} |= f forall w in s (needs Arbitrary MForm)" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
     prop "M,{w} |= f <==> M,w |= f (needs Arbitrary MForm)" $ 
       \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
   where
-    mp = MProp 1
-    mq = MProp 2
+    a = Prop 1
+    b = Prop 2
+    ma = MProp 1
+    mb = MProp 2
 \end{code}
 
 

@@ -6,7 +6,7 @@ We now use the library QuickCheck to randomly generate input for our functions
 and test some properties.
 
 \begin{code}
-module Model where
+module Models where
 
 import Defs
 
@@ -144,6 +144,9 @@ vM = Map.fromList [
     (2, Set.fromList [1,2]),
     (3, Set.empty)
   ]
+
+mM :: KrM
+mM = KrM uM rM vM
 
 sMA, sMB, sMC, sMD :: Team
 sMA = Set.fromList [wmA, wmB]
