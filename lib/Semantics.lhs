@@ -177,7 +177,7 @@ When finding counterexamples, it is useful to find models that are as small as p
 so we also define \verb|shrink| that tries to restrict the worlds of the model.
 \begin{code}
   shrink m = do
-    ws' <- subsequences $ worlds m
+    ws' <- init $ subsequences $ worlds m
     let r' = IntMap.fromList [(w, rel' m w `intersect` ws') | w <- ws']
     let v' = IntMap.filterWithKey (const . (`elem` ws')) $ val m
     return (KrM ws' r' v')

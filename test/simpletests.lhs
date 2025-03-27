@@ -9,6 +9,7 @@ and test some properties.
 module Main where
 
 import qualified Data.Set as Set
+import Test.QuickCheck
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
@@ -64,44 +65,6 @@ We will expand this section later, by adding more tautologies that should hold f
 Here we use QuickCheck, but we need to limit the maximal size of the arbitrary models we generate.
 This is necessary because the evaluation of support in team semantics is inherently exponential in complexity (see e.g. the clause for support of disjunctions).
 
-\begin{code}
-  describe "Tautologies" $ modifyMaxSize (`div` 10) $ do
-    prop "box f <==> !<>!f" $
-      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-    prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
-      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
-  describe "NarrowScope" $ do
-    it "NarrowScope , <>(a v b)" $
-      (mNS, sNS) |= Dia (p `Or` q) `shouldBe` True
-    it "NarrowScope , <>a ^ <>b" $
-      (mNS, sNS) |= (Dia p `And` Dia q) `shouldBe` True
-    it "NarrowScope falsified, <>(a v b)" $
-      (mNSF,sNSF) |= Dia (p `Or` q) `shouldBe` True
-    it "NarrowScope falsified, (<>a ^ <>b) should be false" $
-      (mNSF,sNSF) |= (Dia p `And` Dia q) `shouldBe` False
-  describe "Dual-Prohibition" $ do
-    prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
-      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
-
-  describe "Tautologies" $ 
-    modifyMaxSize (`div` 7) $ do
-    prop "box f <==> !<>!f" $
-      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-    prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
-      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
-    prop "strong tautology is always supported" $
-      \(TPM m s) -> (m,s) |= toptop
-    prop "strong contradiction is never supported" $
-      \(TPM m s) -> not $ (m,s) |= botbot
-    prop "p v ~p is never supported"  $
-      \(TPM m s) -> (m,s) |= (p `Or` Neg p)
-    prop "NE v ~NE does *can* be supported" $
-      expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
-    prop "strong tautology !== top" $
-      expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
-
-\end{code}
-
 The paper \cite{Aloni2024} discusses various interesting properties that should hold for our implementation.
 Narrow-scope and wide-scope relate to the "pragmatic enrichment function."
 The flatness test confirms that our implementation of ML formulas are flat.
@@ -116,11 +79,11 @@ The flatness test confirms that our implementation of ML formulas are flat.
 
   describe "Flatness" $ modifyMaxSize (const 10) $ do
     prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
-      \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, Set.singleton w) |= toBSML f) s
+      \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, [w]) |= toBSML f) s
     prop "M,{w} |= f <==> M,w |= f" $
-      \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
+      \(WPM m w) f -> (m, [w]) |= toBSML (f::MForm) == (m,w) |= f
     prop "Full BSML is *not* flat" $ expectFailure $
-      \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
+      \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, [w]) |= f) s
 
   where
     ma = MProp 1

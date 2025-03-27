@@ -16,7 +16,6 @@ import Semantics
 import Syntax
 import ML
 import Models
-
 \end{code}
 
 
@@ -26,7 +25,6 @@ We use a mix of QuickCheck and specific inputs, depending on what we are testing
 The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
 The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas 
 to confirm our implementation contains the expected semantics.
-
 
 
 \begin{code}
