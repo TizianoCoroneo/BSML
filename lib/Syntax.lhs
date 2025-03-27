@@ -35,7 +35,7 @@ ppForm :: Form -> String
 ppForm = \case
   Bot       -> "_|_"
   NE        -> "NE"
-  Prop p    -> "p" ++ show p
+  Prop p    -> show p
   Neg f     -> "~" ++ ppForm f
   And f1 f2 -> "(" ++ ppForm f1 ++ " & " ++ ppForm f2 ++ ")"
   Or f1 f2  -> "(" ++ ppForm f1 ++ " v " ++ ppForm f2 ++ ")"
@@ -88,7 +88,7 @@ bigor = foldr Or Bot
 but this would have had the undesired side-effect of including Bot in \emph{every}
 disjunction, including non-empty ones.
 
-\subsubsection{Arbitrary Form}
+\subsubsection{Random formulas}
 In order to verify some properties of BSML, we would like to be able to generate
 random formulas. We will use QuickCheck's ecosystem for this purpose, so we only
 need to define an instance of \verb|Arbitrary| for \verb|Form|.

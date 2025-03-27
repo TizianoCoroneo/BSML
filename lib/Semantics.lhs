@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 \subsection{Semantics}
 \label{sec:BSML_semantics}
 
@@ -6,8 +7,8 @@ We interpret formulas on (Kripke) models, which consist of
 \begin{itemize}
   \item a set of worlds $W$;
   \item a binary relation $R \subseteq W \times W$ between worlds;
-  \item and a valuation $V : \texttt{Prop} \to \wp W$ mapping
-propositional letters to the worlds in which they are satisfied.
+  \item and a valuation $V : W \to \wp(\texttt{Prop})$ mapping a world to the propositions that hold in it.
+  \footnote{In the paper, the valuation is defined as a function $\texttt{Prop} -> \wp W$, but this is easily seen to be equivalent.}
 \end{itemize}
 A \emph{team} or \emph{state} (we will use these terms interchangably) on a model is a subset $s \subseteq W$.
 To link back to the introduction, the worlds represent information-configurations and a
@@ -27,11 +28,13 @@ module Semantics where
 
 import Syntax
 
+import Data.List
 import Data.Set (Set)
 import Data.IntMap (IntMap)
 import qualified Data.Set as Set
 import qualified Data.IntMap as IntMap
-import Data.List
+
+import Test.QuickCheck
 \end{code}
 
 In our implementation, we will represent worlds as \verb|Int|'s and teams as
@@ -93,13 +96,14 @@ teams whose union is a given team $s$.
 Naively, we may define e.g.
 \begin{showCode}
 teamParts :: Team -> [(Team, Team)]
-teamParts s = [(t,u) | t <- subsequences s, u <- subsequences s, sort . nub (t ++ u) == sort s]
+teamParts s = [(t,u) | t <- ps, u <- ps, sort . nub (t ++ u) == sort s]
+  where ps = subsequences s
 \end{showCode}
 
 Computationally however, this is incredibly expensive and will form a major
 bottleneck for the efficiency of the model checking.
 While finding such partitions is inherently exponential in complexity, we can
-still do slightly better than the above:
+still do slightly better (at least on average) than the above:
 
 \begin{code}
 teamParts :: Team -> [(Team, Team)]
@@ -108,6 +112,8 @@ teamParts s = do
     u <- subsequences t
     return (t, s \\ u)
 \end{code}
+
+Now, we are ready to define our semantics, in accordance to \cite{Aloni2024}:
 
 \begin{code}
 instance Supportable KrM Team Form where
@@ -128,3 +134,85 @@ instance Antisupportable KrM Team Form where
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
   (m,s) =| Dia f   = all (\w -> (m, rel' m w) =| f) s
 \end{code}
+
+One may also easily extend the above semantics to lists of formulae, as shown below.
+
+\begin{code}
+instance Supportable KrM Team [Form] where
+  support = (all .) . support
+
+instance Antisupportable KrM Team [Form] where
+  antisupport = (all .) . antisupport
+\end{code}
+
+\subsection{Random models}
+As for formulas, we want to be able to generate random models to verify properties
+of BSML, and will use QuickCheck for this.
+
+We will need a function that generates a \verb|Set| containing random elements of a list,
+so we define the following analogue of \verb|sublistOf|:
+
+\begin{code}
+subsetOf :: Ord a => [a] -> Gen (Set a)
+subsetOf = (Set.fromList <$>) . sublistOf
+\end{code}
+
+Then, an arbitrary model $M = (W, R, V)$ can be generated as follows:
+
+\begin{code}
+instance Arbitrary KrM where
+  arbitrary = sized $ \n -> do
+\end{code}
+The size parameter $n$ gives an upper bound to the amount of worlds; we pick some
+$k \leq n$ and define $W = {0, 1, \dots, k}$.
+For every $w <= k$, we then generate a random set of successors $R[w]$ and random set
+of propositions $V(w)$ that hold at $w$.
+\begin{code}
+    k <- choose (0, n)
+    let ws = [0..k]
+    r <- IntMap.fromList . zip ws <$> vectorOf (k+1) (sublistOf [0..k])
+    v <- IntMap.fromList . zip ws <$> vectorOf (k+1) (subsetOf [1..numProps])
+    return (KrM ws r v)
+\end{code}
+When finding counterexamples, it is useful to find models that are as small as possible,
+so we also define \verb|shrink| that tries to restrict the worlds of the model.
+\begin{code}
+  shrink m = do
+    ws' <- subsequences $ worlds m
+    let r' = IntMap.fromList [(w, rel' m w `intersect` ws') | w <- ws']
+    let v' = IntMap.filterWithKey (const . (`elem` ws')) $ val m
+    return (KrM ws' r' v')
+\end{code}
+
+When testing, we will often want to generate a random model \emph{with} a random
+team or world of that model.
+Generating a random \verb|Int| or \verb|[Int]| would not work then, since there
+is no guarantee that the generated value is a valid team/world in the model.
+To remedy that, we define wrappers for models with a team/world and define
+\verb|Arbitrary|-instances for those wrappers:
+
+\begin{code}
+data TeamPointedModel = TPM KrM Team
+  deriving (Show)
+
+data WorldPointedModel = WPM KrM World
+  deriving (Show)
+
+instance Arbitrary TeamPointedModel where
+  arbitrary = do
+    m <- arbitrary
+    s <- sublistOf $ worlds m
+    return (TPM m s)
+
+  shrink (TPM m s) = filter (\(TPM m' s') -> s' `isSubsequenceOf` worlds m') (flip TPM s <$> shrink m)
+
+instance Arbitrary WorldPointedModel where
+  arbitrary = do
+    m <- arbitrary
+    w <- elements $ worlds m
+    return (WPM m w)
+
+  shrink (WPM m w) = filter (\(WPM m' w') -> w' `elem` worlds m') (flip WPM w <$> shrink m)
+\end{code}
+Note that when shrinking, we should only allow shrinks where the world/team is still
+contained in the model.
