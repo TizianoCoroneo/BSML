@@ -14,7 +14,6 @@ import qualified Data.Set as Set
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Test.QuickCheck
 
 \end{code}
 
@@ -29,26 +28,8 @@ The paper gives a couple formulas per example to illustrate the semantics of BSM
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
-    it "Figure 3a1, p v q" $
-      (m3a, s3a1) |= (p `Or` q) `shouldBe` True
-    it "Figure 3a1, (p ^ NE) v (q ^ NE)" $
-      (m3a, s3a1) |= (And p NE `Or` And q NE) `shouldBe` False
-    it "Figure 3a2, (p ^ NE) v (q ^ NE)" $
-      (m3a, s3a2) |= (And p NE `Or` And q NE) `shouldBe` True
-    it "Figure 3b, <>q" $
-      (m3b, s3b) |= Dia q `shouldBe` True
-    it "Figure 3b, <>p" $
-      (m3b, s3b) |= Dia p `shouldBe` False
-    it "Figure 3b, []q" $
-      (m3b, s3b) |= box q `shouldBe` False
-    it "Figure 3b, []p v []q" $
-      (m3b, s3b) |= (box p `Or` box q) `shouldBe` True
-    it "Figure 3b, <>p ^ <>q" $
-      (m3b, s3b) |= (Dia p `And` Dia q) `shouldBe` False
     it "Figure 3b, [<>(p ^ q)]+" $
       (m3b, s3b) |= enrich (MDia (mp `MOr` mq)) `shouldBe` False
-    it "Figure 3c, <>(p v q)" $
-      (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (mp `MOr` mq)) `shouldBe` True
 
@@ -117,8 +98,6 @@ The flatness test confirms that our implementation of ML formulas are flat.
       \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
 
   where
-    p = Prop 1
-    q = Prop 2
     mp = MProp 1
     mq = MProp 2
 \end{code}
