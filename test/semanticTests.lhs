@@ -48,7 +48,7 @@ main = hspec $ do
     it "Figure 3b, <>p ^ <>q" $
       (m3b, s3b) |= (Dia p `And` Dia q) `shouldBe` False
     it "Figure 3c, <>(p v q)" $
-      (m3c, s3c) |= (Dia p `Or` Dia q) `shouldBe` True
+      (m3c, s3c) |= Dia (p `Or` q) `shouldBe` True
 
   describe "Tautologies" $ 
     modifyMaxSize (const 15) $ do
@@ -81,7 +81,7 @@ main = hspec $ do
     modifyMaxSize (const 10) $ prop "p v ~p is never supported"  $
       \(TPM m s) -> (m,s) |= (p `Or` Neg p)
     prop "NE v ~NE *can* be supported" $
-      expectFailure $ \(TPM m s) -> (m,s) |= (top `Or` Neg top)
+      expectFailure $ \(TPM m s) -> not $ (m,s) |= (top `Or` Neg top)
     prop "strong tautology !== top" $
       expectFailure $ \(TPM m s) -> (m,s) |= toptop == (m,s) |= top
     where
