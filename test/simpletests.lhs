@@ -26,6 +26,7 @@ The paper gives a couple formulas per example to illustrate the semantics of BSM
 
 
 \begin{code}
+
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
@@ -64,6 +65,24 @@ This is necessary because the evaluation of support in team semantics is inheren
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+  describe "NarrowScope" $ do
+    it "NarrowScope , <>(a v b)" $
+      (mNS, sNS) |= Dia (p `Or` q) `shouldBe` True
+    it "NarrowScope , <>a ^ <>b" $
+      (mNS, sNS) |= (Dia p `And` Dia q) `shouldBe` True
+    it "NarrowScope falsified, <>(a v b)" $
+      (mNSF,sNSF) |= Dia (p `Or` q) `shouldBe` True
+    it "NarrowScope falsified, (<>a ^ <>b) should be false" $
+      (mNSF,sNSF) |= (Dia p `And` Dia q) `shouldBe` False
+  describe "Dual-Prohibition" $ do
+    prop "Dual-Prohibition , !<>(a v b) |= !<>a ^ !<>b" $
+      \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
+  describe "Tautologies" $ 
+    modifyMaxSize (`div` 10) $ do
+    prop "box f <==> !<>!f" $
+      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
+    
+  describe "Abbreviations" $ do
     prop "strong tautology is always supported" $
       \(TPM m s) -> (m,s) |= toptop
     prop "strong contradiction is never supported" $
@@ -95,9 +114,17 @@ The flatness test confirms that our implementation of ML formulas are flat.
       \(WPM m w) f -> (m, Set.singleton w) |= toBSML (f::MForm) == (m,w) |= f
     prop "Full BSML is *not* flat" $ expectFailure $
       \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
+
   where
     p = Prop 1
     q = Prop 2
     mp = MProp 1
     mq = MProp 2
 \end{code}
+
+To run the tests, use \verb|stack test|.
+
+To also find out which part of your program is actually used for these tests,
+run \verb|stack clean && stack test --coverage|. Then look for ``The coverage
+report for ... is available at ... .html'' and open this file in your browser.
+See also: \url{https://wiki.haskell.org/Haskell_program_coverage}.
