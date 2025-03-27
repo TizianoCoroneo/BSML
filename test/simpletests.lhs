@@ -8,16 +8,14 @@ and test some properties.
 \begin{code}
 module Main where
 
+import qualified Data.Set as Set
+import Test.Hspec
+import Test.Hspec.QuickCheck
+
 import Semantics
 import Syntax
 import ML
-
-import qualified Data.Set as Set
-import Test.Hspec
-
 import Models
-
-import Test.Hspec.QuickCheck
 
 \end{code}
 

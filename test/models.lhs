@@ -8,15 +8,14 @@ and test some properties.
 \begin{code}
 module Models where
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 import Semantics
 import Syntax
 import ML
-
-import Data.Map (Map)
-import qualified Data.Map as Map
-
-import Data.Set (Set)
-import qualified Data.Set as Set
 
 \end{code}
 
