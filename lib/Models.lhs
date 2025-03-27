@@ -10,16 +10,10 @@ and test some properties.
 
 module Models where
 
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 
 import Semantics
-import Syntax
-import ML
 
 \end{code}
 
