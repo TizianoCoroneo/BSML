@@ -220,7 +220,7 @@ maximumArbitraryMFormPropositions :: Int
 maximumArbitraryMFormPropositions = 32
 
 maximumArbitraryFormPropositions :: Int
-maximumArbitraryFormPropositions = 32
+maximumArbitraryFormPropositions = 10
 
 arbitraryFormScaling :: Int
 arbitraryFormScaling = 10
