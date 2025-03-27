@@ -13,9 +13,10 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 
 import Semantics
+import Parser
 import Syntax
 import ML
-import Models
+import Models ( m3b, m3c, mM, s3b, s3c, sMA, sMB, sMC, sMD )
 
 \end{code}
 
@@ -57,6 +58,9 @@ main = hspec $ do
     it "(d) |= [a v b]+  == False" $
       (mM, sMD) |= enrich (ma `MOr` mb) `shouldBe` False
 
+    prop "Arbitrary |= (a v b) !== Arbitrary |= [a v b]+  == False" $
+      expectFailure $ \(TPM m s) -> (m,s) |= toBSML (ma `MOr` mb) == (m,s) |= enrich (ma `MOr` mb)
+
 
 \end{code}
 
@@ -70,19 +74,24 @@ The flatness test confirms that our implementation of ML formulas are flat.
 
 \begin{code}
 
-  describe "Properties from Paper" $ modifyMaxSize (const 12) $ do
+  describe "Properties from Paper" $ modifyMaxSize (const 25) $ do
     prop "NarrowScope, <>(a v b) =| (<>a ^ <>b)" $
       \(TPM m s) -> (m,s) |= enrich (MDia (ma `MOr` mb)) == (m,s) |= enrich (MDia ma `MAnd` MDia mb)
     prop "Wide Scope, <>a v <>b) =| <>a ^ <>b" $
       \(TPM m s) -> all (\w -> rel' m w == s) s <= ((m,s)  |= enrich (MDia ma `MOr` MDia mb) <= (m,s) |= enrich (MDia ma `MAnd` MDia mb))
 
-  describe "Flatness" $ modifyMaxSize (const 10) $ do
-    prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
+  describe "Flatness" $ modifyMaxSize (const 15) $ do
+    modifyMaxSize (const 10) $ prop "(M,s) |= f <==> M,{w} |= f forall w in s" $
       \(TPM m s) f -> (m,s) |= toBSML (f::MForm) == all (\w -> (m, [w]) |= toBSML f) s
     prop "M,{w} |= f <==> M,w |= f" $
       \(WPM m w) f -> (m, [w]) |= toBSML (f::MForm) == (m,w) |= f
     prop "Full BSML is *not* flat" $ expectFailure $
       \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, [w]) |= f) s
+
+  describe "Pretty Print and Parsing" $ do
+    prop "formula -> prettyPrint -> Parsing == original formula" $
+      \f -> parseFormula (ppForm (f::Form)) == Right f
+  
 
   where
     ma = MProp 1

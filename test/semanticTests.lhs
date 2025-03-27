@@ -50,23 +50,22 @@ main = hspec $ do
     it "Figure 3c, <>(p v q)" $
       (m3c, s3c) |= Dia (p `Or` q) `shouldBe` True
 
-  describe "Tautologies" $ 
-    modifyMaxSize (const 15) $ do
-    prop "box f <==> !<>!f" $
+  describe "Tautologies" $ modifyMaxSize (const 20) $ do
+    modifyMaxSize (const 10) $ prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
     
     prop "<>(p v q) <==> <>p v <>q" $
       \(TPM m s) -> (m::KrM,s::Team) |= Dia (p `Or` q) == (m,s) |= (Dia p `Or` Dia q)
     prop "<>(p ^ q) ==> <>p ^ <>q" $
       \(TPM m s) -> (m::KrM,s::Team) |= Dia (p `And` q) ==> (m,s) |= (Dia p `And` Dia q)
-    modifyMaxSuccess (const 1000) $ prop "<>p ^ <>q !==> <>(p ^ q)" $
+    modifyMaxSize (const 25) $ prop "<>p ^ <>q !==> <>(p ^ q)" $
       expectFailure $ \(TPM m s) -> (m::KrM,s::Team) |= (Dia p `And` Dia q) ==> (m,s) |= Dia (p `And` q)
     
     prop "box(p ^ q) <==> box p ^ box q" $
       \(TPM m s) -> (m::KrM,s::Team) |= box (p `And` q) == (m,s) |= (box p `And` box q)
     prop "box p v box q ==> box(p v q)" $
       \(TPM m s) -> (m::KrM,s::Team) |= (box p `Or` box q) ==> (m,s) |= box (p `Or` q)
-    modifyMaxSuccess (const 1000) $ prop "box(p v q) !==> box p v box q" $
+    modifyMaxSize (const 25) $ modifyMaxSuccess (const 1000) $ prop "box(p v q) !==> box p v box q" $
       expectFailure $ \(TPM m s) -> (m::KrM,s::Team) |= box (p `Or` q) ==> (m,s) |= (box p `Or` box q)
 
     prop "DeMorgan's Law" $
