@@ -11,7 +11,9 @@ We first import the modules that we require to run the parser.
 > import Data.Char
 > import Token
 > import Lexer
-> import Defs
+> import Syntax
+> import Semantics
+> import ML
 > }
 
 \end{code}
@@ -67,7 +69,7 @@ regular precedence rules, and hence need to be accounted for.
 > | BOT { Bot }
 > | NE { NE }
 > | NOT BrForm { Neg $2 }
-> | BOX BrForm { Defs.box $2 }
+> | BOX BrForm { Syntax.box $2 }
 > | DMD BrForm { Dia $2 }
 > | '(' Form AND Form ')' { And $2 $4 }
 > | '(' Form OR Form ')' { Or $2 $4 }

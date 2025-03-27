@@ -14,10 +14,11 @@ dependencies:
   - directory
   - lens
   - mtl
-  - parsec
   - random
   - template-haskell
   - array
+
+build-tools: [ alex, happy ]
 
 library:
   source-dirs: lib
