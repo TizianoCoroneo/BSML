@@ -466,10 +466,10 @@ formParser = Expr.buildExpressionParser parseTable parseTerm
 
 parseTable :: Expr.OperatorTable String () Identity Form
 parseTable = [
-  [Expr.Prefix (Neg <$ symbol "!")],
+  [Expr.Prefix (Neg <$ symbol "~")], 
   [
-    Expr.Prefix (Dia <$ symbol "<>")
-    -- Expr.Prefix (Box? <$ symbol "[]"), -- How to do this? We would like to accept the box operator, but it's not part of the grammar.
+    Expr.Prefix (Dia <$ symbol "<>"),
+    Expr.Prefix (Neg . Dia . Neg <$ symbol "[]") -- How to do this? We would like to accept the box operator, but it's not part of the grammar.
   ],
   [
     Expr.Infix (And <$ symbol "&") Expr.AssocLeft,
