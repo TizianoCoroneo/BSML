@@ -1,11 +1,12 @@
-\subsection{Syntax of BSML}
+\subsection{Syntax}
 \label{sec:BSML_syntax}
 \begin{code}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Syntax where
 
+import GHC.Generics
 import Test.QuickCheck
-
 \end{code}
 This module describes the syntactical elements of BSML.
 We define formulas, some syntactical operations and provide generators for random formulas.
@@ -23,14 +24,33 @@ data Form
   | And Form Form
   | Or  Form Form
   | Dia Form
-  deriving (Eq,Show)
+  deriving (Eq,Show,Generic)
 \end{code}
 Readers familiar with Modal Logic (see e.g.\cite{BdRV}) should recognize this as
 the basic modal language, extended with \verb|NE|, the nonemptiness atom.
 As we will see when defining the semantics, this atom is used to exclude the
-assertion of logical statements due to empty information-configurations (i.e. states/teams).
+assertion of logical statements due to empty information-configurations (i.e. empty states/teams).
 
-Further, we define some abbreviations for formulas, following \cite{Aloni2024}:
+For the sake of more legible output, we also define a pretty-printer for formulas:
+\begin{code}
+ppForm :: Form -> String
+ppForm = \case
+  Bot       -> "_|_"
+  NE        -> "NE"
+  Prop p    -> "p" ++ show p
+  Neg f     -> "!" ++ ppForm f
+  And f1 f2 -> "(" ++ ppForm f1 ++ " ^ " ++ ppForm f2 ++ ")"
+  Or f1 f2  -> "(" ++ ppForm f1 ++ " v " ++ ppForm f2 ++ ")"
+  Dia f     -> "<>" ++ ppForm f
+\end{code}
+
+Further, we define some abbreviations for formulas, following \cite{Aloni2024}.
+As usual, $\Box$ is defined as the dual of $\lozenge$.
+As will become evident when we define the semantics, $\bot$ is supported in a state if and only if that state is empty.
+It is therefore referred to as the \textit{weak contradiction}.
+The strong contradiction, defined as $\botbot \coloneqq \bot \land \texttt{NE}$, will never be supported.
+Dually, the formula $\top \coloneqq \texttt{NE}$ serves as the \textit{weak tautology}, being supported by non-empty states
+and the \texttt{strong tautology} $\toptop \coloneqq \neg \bot$ is always supported.
 \begin{code}
 -- Define box as the dual of diamond.
 box :: Form -> Form
@@ -85,8 +105,8 @@ numProps :: Int
 numProps = 32
 \end{code}
 One might wonder why we do not use the size parameter of a generator to determine the range of propositions.
-We intentionally avoided this, because it would introduce a bias in the occurence of
-Propositions, where e.g. more nested subformulas will not contain high propositions.
+We intentionally avoid this, because it would introduce a bias in the occurence of
+Propositions, where more nested subformulas will not contain high propositions.
 
 Now we can define the \verb|Arbitrary Form|-instance using a standard sized generator,
 where formulas generated with size $0$ are random atoms and larger formulas are
@@ -107,6 +127,12 @@ instance Arbitrary Form where
         Dia <$> f
       ]
     where f = scale (`div` 2) arbitrary
+
+  shrink (Neg f)     = [Bot, NE, f]      ++ [Neg f'      | f'        <- shrink f]
+  shrink (And f1 f2) = [Bot, NE, f1, f2] ++ [And f1' f2' | (f1',f2') <- shrink (f1,f2)]
+  shrink (Or f1 f2)  = [Bot, NE, f1, f2] ++ [Or  f1' f2' | (f1',f2') <- shrink (f1,f2)]
+  shrink (Dia f)     = [Bot, NE, f]      ++ [Dia f'      | f'        <- shrink f]
+  shrink _           = []
 \end{code}
 The choice to scale the size of the generator by dividing it by 2 is completely arbitrary,
-but seems to work well in practice and is used in similar projects, see e.g. \cite{SMCDEL}.
+but seems to work well in practice and is used in similar projects, see e.g. \cite{gattinger2024:software:SMCDEL}.
