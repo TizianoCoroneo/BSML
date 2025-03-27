@@ -133,8 +133,8 @@ Last, we also define shrinks of formulas that empower QuickCheck to attempt
 simplifying counterexamples when/if it finds any.
 \begin{code}
   shrink (Neg f)     = [Bot, NE, f]      ++ [Neg f'      | f'        <- shrink f]
+  shrink (Dia f)     = [Bot, NE, f]      ++ [Dia f'      | f'        <- shrink f]
   shrink (And f1 f2) = [Bot, NE, f1, f2] ++ [And f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink (Or f1 f2)  = [Bot, NE, f1, f2] ++ [Or  f1' f2' | (f1',f2') <- shrink (f1,f2)]
-  shrink (Dia f)     = [Bot, NE, f]      ++ [Dia f'      | f'        <- shrink f]
   shrink _           = []
 \end{code}
