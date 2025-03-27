@@ -2,15 +2,17 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE NoStrictData #-}
 {-# LANGUAGE UnboxedTuples #-}
+
+
 {-# LANGUAGE PartialTypeSignatures #-}
-#if __GLASGOW_HASKELL__ >= 710
-{-# LANGUAGE PartialTypeSignatures #-}
-#endif
+{-# HLINT ignore "Use camelCase" #-}
+{-# HLINT ignore "Use lambda-case" #-}
+
 module Parser where
 import Data.Char
 import Token
@@ -18,7 +20,6 @@ import Lexer
 import Defs
 import qualified Data.Function as Happy_Prelude
 import qualified Data.Bool as Happy_Prelude
-import qualified Data.Function as Happy_Prelude
 import qualified Data.Maybe as Happy_Prelude
 import qualified Data.Int as Happy_Prelude
 import qualified Data.String as Happy_Prelude
@@ -36,10 +37,10 @@ import Control.Monad (ap)
 
 -- parser produced by Happy Version 2.1.5
 
-data HappyAbsSyn 
+data HappyAbsSyn
         = HappyTerminal (Token AlexPosn)
         | HappyErrorToken Happy_Prelude.Int
-        | HappyAbsSyn5 (Form)
+        | HappyAbsSyn5 Form
 
 {-# NOINLINE happyTokenStrings #-}
 happyTokenStrings = ["BOT","NE","AND","OR","NOT","BOX","DMD","NUM","'('","')'","%eof"]
@@ -87,9 +88,8 @@ happy_n_starts = 1 :: Happy_Prelude.Int
 happyReduce_1 = happySpecReduce_1  0# happyReduction_1
 happyReduction_1 (HappyAbsSyn5  happy_var_1)
          =  HappyAbsSyn5
-                 (happy_var_1
-        )
-happyReduction_1 _  = notHappyAtAll 
+                 happy_var_1
+happyReduction_1 _  = notHappyAtAll
 
 happyReduce_2 = happySpecReduce_3  0# happyReduction_2
 happyReduction_2 (HappyAbsSyn5  happy_var_3)
@@ -98,7 +98,7 @@ happyReduction_2 (HappyAbsSyn5  happy_var_3)
          =  HappyAbsSyn5
                  (And happy_var_1 happy_var_3
         )
-happyReduction_2 _ _ _  = notHappyAtAll 
+happyReduction_2 _ _ _  = notHappyAtAll
 
 happyReduce_3 = happySpecReduce_3  0# happyReduction_3
 happyReduction_3 (HappyAbsSyn5  happy_var_3)
@@ -107,26 +107,24 @@ happyReduction_3 (HappyAbsSyn5  happy_var_3)
          =  HappyAbsSyn5
                  (Or happy_var_1 happy_var_3
         )
-happyReduction_3 _ _ _  = notHappyAtAll 
+happyReduction_3 _ _ _  = notHappyAtAll
 
 happyReduce_4 = happySpecReduce_1  1# happyReduction_4
 happyReduction_4 (HappyTerminal (TokenInt happy_var_1 _))
          =  HappyAbsSyn5
                  (Prop happy_var_1
         )
-happyReduction_4 _  = notHappyAtAll 
+happyReduction_4 _  = notHappyAtAll
 
 happyReduce_5 = happySpecReduce_1  1# happyReduction_5
 happyReduction_5 _
          =  HappyAbsSyn5
-                 (Bot
-        )
+                 Bot
 
 happyReduce_6 = happySpecReduce_1  1# happyReduction_6
 happyReduction_6 _
          =  HappyAbsSyn5
-                 (NE
-        )
+                 NE
 
 happyReduce_7 = happySpecReduce_2  1# happyReduction_7
 happyReduction_7 (HappyAbsSyn5  happy_var_2)
@@ -134,7 +132,7 @@ happyReduction_7 (HappyAbsSyn5  happy_var_2)
          =  HappyAbsSyn5
                  (Neg happy_var_2
         )
-happyReduction_7 _ _  = notHappyAtAll 
+happyReduction_7 _ _  = notHappyAtAll
 
 happyReduce_8 = happySpecReduce_2  1# happyReduction_8
 happyReduction_8 (HappyAbsSyn5  happy_var_2)
@@ -142,7 +140,7 @@ happyReduction_8 (HappyAbsSyn5  happy_var_2)
          =  HappyAbsSyn5
                  (Defs.box happy_var_2
         )
-happyReduction_8 _ _  = notHappyAtAll 
+happyReduction_8 _ _  = notHappyAtAll
 
 happyReduce_9 = happySpecReduce_2  1# happyReduction_9
 happyReduction_9 (HappyAbsSyn5  happy_var_2)
@@ -150,7 +148,7 @@ happyReduction_9 (HappyAbsSyn5  happy_var_2)
          =  HappyAbsSyn5
                  (Dia happy_var_2
         )
-happyReduction_9 _ _  = notHappyAtAll 
+happyReduction_9 _ _  = notHappyAtAll
 
 happyReduce_10 = happyReduce 5# 1# happyReduction_10
 happyReduction_10 (_ `HappyStk`
@@ -196,21 +194,21 @@ happyLex _kend kmore  (tk:tks) = kmore (happyTerminalToTok tk) tk tks
 happyNewToken action sts stk = happyLex (\tk -> happyDoAction 12# notHappyAtAll action sts stk) (\i tk -> happyDoAction i tk action sts stk)
 
 happyReport 12# tk explist resume tks = happyReport' tks explist resume
-happyReport _ tk explist resume tks = happyReport' (tk:tks) explist (\tks -> resume (Happy_Prelude.tail tks))
+happyReport _ tk explist resume tks = happyReport' (tk:tks) explist (resume . Happy_Prelude.tail)
 
 
-happyThen :: () => (ParseResult a) -> (a -> (ParseResult b)) -> (ParseResult b)
+happyThen :: () => ParseResult a -> (a -> ParseResult b) -> ParseResult b
 happyThen = (Happy_Prelude.>>=)
-happyReturn :: () => a -> (ParseResult a)
-happyReturn = (Happy_Prelude.return)
-happyThen1 m k tks = (Happy_Prelude.>>=) m (\a -> k a tks)
-happyFmap1 f m tks = happyThen (m tks) (\a -> happyReturn (f a))
-happyReturn1 :: () => a -> b -> (ParseResult a)
-happyReturn1 = \a tks -> (Happy_Prelude.return) a
-happyReport' :: () => [(Token AlexPosn)] -> [Happy_Prelude.String] -> ([(Token AlexPosn)] -> (ParseResult a)) -> (ParseResult a)
-happyReport' = (\tokens expected resume -> happyError tokens)
+happyReturn :: () => a -> ParseResult a
+happyReturn = Happy_Prelude.return
+happyThen1 m k tks = (Happy_Prelude.>>=) m (`k` tks)
+happyFmap1 f m tks = happyThen (m tks) (happyReturn . f)
+happyReturn1 :: () => a -> b -> ParseResult a
+happyReturn1 a tks = Happy_Prelude.return a
+happyReport' :: () => [Token AlexPosn] -> [Happy_Prelude.String] -> ([Token AlexPosn] -> ParseResult a) -> ParseResult a
+happyReport' tokens expected resume = happyError tokens
 
-happyAbort :: () => [(Token AlexPosn)] -> (ParseResult a)
+happyAbort :: () => [Token AlexPosn] -> ParseResult a
 happyAbort = Happy_Prelude.error "Called abort handler in non-resumptive parser"
 
 formula tks = happySomeParser where
@@ -221,7 +219,7 @@ happySeq = happyDontSeq
 
 data ParseError = ParseError { pe_str :: String
                               ,pe_msg :: String
-                              ,pe_col :: Int} 
+                              ,pe_col :: Int}
      deriving (Eq , Show)
 type ParseResult a = Either ParseError a
 happyError :: [ Token AlexPosn ] -> ParseResult a
@@ -237,7 +235,7 @@ myAlexScan str = go ( alexStartPos , '\n' ,[] , str )
       go inp@( pos ,_ ,_ , str ) =
           case alexScan inp 0 of
               AlexEOF -> Right []
-              AlexError (( AlexPn _ _ column ) ,_ ,_ , _ ) -> Left $
+              AlexError (AlexPn _ _ column ,_ ,_ , _ ) -> Left $
                   ParseError { pe_str = str , pe_msg = " Lexical error : " , pe_col = column -1}
               AlexSkip inp' len -> go inp'
               AlexToken inp' len act -> go inp'  >=
@@ -250,47 +248,47 @@ parseFormula str = go $ myAlexScan str  >= formula
       go ( Right res ) = Right res
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 
-#if !defined(__GLASGOW_HASKELL__)
-#  error This code isn't being built with GHC.
-#endif
+
+
+
 
 -- Get WORDS_BIGENDIAN (if defined)
-#include "MachDeps.h"
+
 
 -- Do not remove this comment. Required to fix CPP parsing when using GCC and a clang-compiled alex.
-#define LT(n,m) ((Happy_GHC_Exts.tagToEnum# (n Happy_GHC_Exts.<# m)) :: Happy_Prelude.Bool)
-#define GTE(n,m) ((Happy_GHC_Exts.tagToEnum# (n Happy_GHC_Exts.>=# m)) :: Happy_Prelude.Bool)
-#define EQ(n,m) ((Happy_GHC_Exts.tagToEnum# (n Happy_GHC_Exts.==# m)) :: Happy_Prelude.Bool)
-#define PLUS(n,m) (n Happy_GHC_Exts.+# m)
-#define MINUS(n,m) (n Happy_GHC_Exts.-# m)
-#define TIMES(n,m) (n Happy_GHC_Exts.*# m)
-#define NEGATE(n) (Happy_GHC_Exts.negateInt# (n))
+
+
+
+
+
+
+
 
 type Happy_Int = Happy_GHC_Exts.Int#
 data Happy_IntList = HappyCons Happy_Int Happy_IntList
 
-#define INVALID_TOK -1#
-#define ERROR_TOK 0#
-#define CATCH_TOK 1#
 
-#if defined(HAPPY_COERCE)
-#  define GET_ERROR_TOKEN(x)  (case Happy_GHC_Exts.unsafeCoerce# x of { (Happy_GHC_Exts.I# i) -> i })
-#  define MK_ERROR_TOKEN(i)   (Happy_GHC_Exts.unsafeCoerce# (Happy_GHC_Exts.I# i))
-#  define MK_TOKEN(x)         (happyInTok (x))
-#else
-#  define GET_ERROR_TOKEN(x)  (case x of { HappyErrorToken (Happy_GHC_Exts.I# i) -> i })
-#  define MK_ERROR_TOKEN(i)   (HappyErrorToken (Happy_GHC_Exts.I# i))
-#  define MK_TOKEN(x)         (HappyTerminal (x))
-#endif
 
-#if defined(HAPPY_DEBUG)
-#  define DEBUG_TRACE(s)    (happyTrace (s)) Happy_Prelude.$
-happyTrace string expr = Happy_System_IO_Unsafe.unsafePerformIO Happy_Prelude.$ do
-    Happy_System_IO.hPutStr Happy_System_IO.stderr string
-    Happy_Prelude.return expr
-#else
-#  define DEBUG_TRACE(s)    {- nothing -}
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 infixr 9 `HappyStk`
 data HappyStk a = HappyStk a (HappyStk a)
@@ -303,29 +301,29 @@ happyParse start_state = happyNewToken start_state notHappyAtAll notHappyAtAll
 -----------------------------------------------------------------------------
 -- Accepting the parse
 
--- If the current token is ERROR_TOK, it means we've just accepted a partial
+-- If the current token is 0#, it means we've just accepted a partial
 -- parse (a %partial parser).  We must ignore the saved token on the top of
 -- the stack in this case.
-happyAccept ERROR_TOK tk st sts (_ `HappyStk` ans `HappyStk` _) =
+happyAccept 0# tk st sts (_ `HappyStk` ans `HappyStk` _) =
         happyReturn1 ans
 happyAccept j tk st sts (HappyStk ans _) =
-        (happyTcHack j (happyTcHack st)) (happyReturn1 ans)
+        happyTcHack j (happyTcHack st) (happyReturn1 ans)
 
 -----------------------------------------------------------------------------
 -- Arrays only: do the next action
 
 happyDoAction i tk st =
-  DEBUG_TRACE("state: " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++
-              ",\ttoken: " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# i) Happy_Prelude.++
-              ",\taction: ")
+  {- nothing -}
+
+
   case happyDecodeAction (happyNextAction i st) of
-    HappyFail             -> DEBUG_TRACE("failing.\n")
+    HappyFail             -> {- nothing -}
                              happyFail i tk st
-    HappyAccept           -> DEBUG_TRACE("accept.\n")
+    HappyAccept           -> {- nothing -}
                              happyAccept i tk st
-    HappyReduce rule      -> DEBUG_TRACE("reduce (rule " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# rule) Happy_Prelude.++ ")")
-                             (happyReduceArr Happy_Data_Array.! (Happy_GHC_Exts.I# rule)) i tk st
-    HappyShift  new_state -> DEBUG_TRACE("shift, enter state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# new_state) Happy_Prelude.++ "\n")
+    HappyReduce rule      -> {- nothing -}
+                             (happyReduceArr Happy_Data_Array.! Happy_GHC_Exts.I# rule) i tk st
+    HappyShift  new_state -> {- nothing -}
                              happyShift new_state i tk st
 
 {-# INLINE happyNextAction #-}
@@ -335,15 +333,15 @@ happyNextAction i st = case happyIndexActionTable i st of
 
 {-# INLINE happyIndexActionTable #-}
 happyIndexActionTable i st
-  | GTE(i, 0#), GTE(off, 0#), EQ(happyIndexOffAddr happyCheck off, i)
-  -- i >= 0:   Guard against INVALID_TOK (do the default action, which ultimately errors)
+  | Happy_GHC_Exts.tagToEnum# (i Happy_GHC_Exts.>=#  0#) :: Happy_Prelude.Bool, Happy_GHC_Exts.tagToEnum# (off Happy_GHC_Exts.>=#  0#) :: Happy_Prelude.Bool, Happy_GHC_Exts.tagToEnum# (happyIndexOffAddr happyCheck off Happy_GHC_Exts.==#  i) :: Happy_Prelude.Bool
+  -- i >= 0:   Guard against -1# (do the default action, which ultimately errors)
   -- off >= 0: Otherwise it's a default action
   -- equality check: Ensure that the entry in the compressed array is owned by st
   = Happy_Prelude.Just (Happy_GHC_Exts.I# (happyIndexOffAddr happyTable off))
   | Happy_Prelude.otherwise
   = Happy_Prelude.Nothing
   where
-    off = PLUS(happyIndexOffAddr happyActOffsets st, i)
+    off = happyIndexOffAddr happyActOffsets st Happy_GHC_Exts.+#  i
 
 data HappyAction
   = HappyFail
@@ -356,50 +354,50 @@ data HappyAction
 happyDecodeAction :: Happy_Int -> HappyAction
 happyDecodeAction  0#                        = HappyFail
 happyDecodeAction -1#                        = HappyAccept
-happyDecodeAction action | LT(action, 0#)    = HappyReduce NEGATE(PLUS(action, 1#))
-                         | Happy_Prelude.otherwise = HappyShift MINUS(action, 1#)
+happyDecodeAction action | Happy_GHC_Exts.tagToEnum# (action Happy_GHC_Exts.<#  0#) :: Happy_Prelude.Bool    = HappyReduce (Happy_GHC_Exts.negateInt# (action Happy_GHC_Exts.+#  1#))
+                         | Happy_Prelude.otherwise = HappyShift (action Happy_GHC_Exts.-#  1#)
 
 {-# INLINE happyIndexGotoTable #-}
 happyIndexGotoTable nt st = happyIndexOffAddr happyTable off
   where
-    off = PLUS(happyIndexOffAddr happyGotoOffsets st, nt)
+    off = happyIndexOffAddr happyGotoOffsets st Happy_GHC_Exts.+#  nt
 
 {-# INLINE happyIndexOffAddr #-}
 happyIndexOffAddr :: HappyAddr -> Happy_Int -> Happy_Int
 happyIndexOffAddr (HappyA# arr) off =
-#if __GLASGOW_HASKELL__ >= 901
+
   Happy_GHC_Exts.int32ToInt# -- qualified import because it doesn't exist on older GHC's
-#endif
-#ifdef WORDS_BIGENDIAN
-  -- The CI of `alex` tests this code path
-  (Happy_GHC_Exts.word32ToInt32# (Happy_GHC_Exts.wordToWord32# (Happy_GHC_Exts.byteSwap32# (Happy_GHC_Exts.word32ToWord# (Happy_GHC_Exts.int32ToWord32#
-#endif
+
+
+
+
+
   (Happy_GHC_Exts.indexInt32OffAddr# arr off)
-#ifdef WORDS_BIGENDIAN
-  )))))
-#endif
+
+
+
 
 happyIndexRuleArr :: Happy_Int -> (# Happy_Int, Happy_Int #)
 happyIndexRuleArr r = (# nt, len #)
   where
     !(Happy_GHC_Exts.I# n_starts) = happy_n_starts
-    offs = TIMES(MINUS(r,n_starts),2#)
+    offs = (r Happy_GHC_Exts.-# n_starts) Happy_GHC_Exts.*# 2#
     nt = happyIndexOffAddr happyRuleArr offs
-    len = happyIndexOffAddr happyRuleArr PLUS(offs,1#)
+    len = happyIndexOffAddr happyRuleArr (offs Happy_GHC_Exts.+# 1#)
 
 data HappyAddr = HappyA# Happy_GHC_Exts.Addr#
 
 -----------------------------------------------------------------------------
 -- Shifting a token
 
-happyShift new_state ERROR_TOK tk st sts stk@(x `HappyStk` _) =
+happyShift new_state 0# tk st sts stk@(x `HappyStk` _) =
      -- See "Error Fixup" below
-     let i = GET_ERROR_TOKEN(x) in
-     DEBUG_TRACE("shifting the error token")
+     let i = (case x of { HappyErrorToken (Happy_GHC_Exts.I# i) -> i }) in
+     {- nothing -}
      happyDoAction i tk new_state (HappyCons st sts) stk
 
 happyShift new_state i tk st sts stk =
-     happyNewToken new_state (HappyCons st sts) (MK_TOKEN(tk) `HappyStk` stk)
+     happyNewToken new_state (HappyCons st sts) (HappyTerminal tk `HappyStk` stk)
 
 -- happyReduce is specialised for the common cases.
 
@@ -423,7 +421,7 @@ happySpecReduce_3 nt fn j tk old_st
        happyTcHack old_st (happySeq r (happyGoto nt j tk st sts (r `HappyStk` stk')))
 
 happyReduce k nt fn j tk st sts stk
-     = case happyDrop MINUS(k,(1# :: Happy_Int)) sts of
+     = case happyDrop (k Happy_GHC_Exts.-# (1# :: Happy_Int)) sts of
          sts1@(HappyCons st1 _) ->
                 let r = fn stk in -- it doesn't hurt to always seq here...
                 st `happyTcHack` happyDoSeq r (happyGoto nt j tk st1 sts1 r)
@@ -440,23 +438,23 @@ happyMonad2Reduce k nt fn j tk st sts stk =
         sts1@(HappyCons st1 _) ->
           let drop_stk = happyDropStk k stk
               off = happyIndexOffAddr happyGotoOffsets st1
-              off_i = PLUS(off, nt)
+              off_i = (off Happy_GHC_Exts.+#  nt)
               new_state = happyIndexOffAddr happyTable off_i
           in
             j `happyTcHack` happyThen1 (fn stk tk)
                                        (\r -> happyNewToken new_state sts1 (r `HappyStk` drop_stk))
 
 happyDrop 0# l               = l
-happyDrop n  (HappyCons _ t) = happyDrop MINUS(n,(1# :: Happy_Int)) t
+happyDrop n  (HappyCons _ t) = happyDrop (n Happy_GHC_Exts.-# (1# :: Happy_Int)) t
 
 happyDropStk 0# l                 = l
-happyDropStk n  (x `HappyStk` xs) = happyDropStk MINUS(n,(1#::Happy_Int)) xs
+happyDropStk n  (x `HappyStk` xs) = happyDropStk (n Happy_GHC_Exts.-# (1#::Happy_Int)) xs
 
 -----------------------------------------------------------------------------
 -- Moving to a new state after a reduction
 
 happyGoto nt j tk st =
-   DEBUG_TRACE(", goto state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# new_state) Happy_Prelude.++ "\n")
+   {- nothing -}
    happyDoAction j tk new_state
   where new_state = happyIndexGotoTable nt st
 
@@ -469,10 +467,10 @@ declares the two action form `%error { abort } { report }` for
 it works in one (not resumptive) or two phases (resumptive):
 
  1. Fixup mode:
-    Try to see if there is an action for the error token ERROR_TOK. If there
+    Try to see if there is an action for the error token 0#. If there
     is, do *not* emit an error and pretend instead that an `error` token was
     inserted.
-    When there is no ERROR_TOK action, report an error.
+    When there is no 0# action, report an error.
 
     In non-resumptive error handling, calling the single error handler
     (e.g. `happyError`) will throw an exception and abort the parser.
@@ -586,9 +584,9 @@ amount of input for a successful shift, preferring the topmost such catch frame.
 
 -- happyFail :: Happy_Int -> Token -> Happy_Int -> _
 -- This function triggers Note [Error recovery].
--- If the current token is ERROR_TOK, phase (1) has failed and we might try
+-- If the current token is 0#, phase (1) has failed and we might try
 -- phase (2).
-happyFail ERROR_TOK = happyFixupFailed
+happyFail 0# = happyFixupFailed
 happyFail i         = happyTryFixup i
 
 -- Enter Error Fixup (see Note [Error recovery]):
@@ -596,16 +594,16 @@ happyFail i         = happyTryFixup i
 -- When a `happyShift` accepts the error token, we will pop off the error token
 -- to resume parsing with the current lookahead `i`.
 happyTryFixup i tk action sts stk =
-  DEBUG_TRACE("entering `error` fixup.\n")
-  happyDoAction ERROR_TOK tk action sts (MK_ERROR_TOKEN(i) `HappyStk` stk)
+  {- nothing -}
+  happyDoAction 0# tk action sts (HappyErrorToken (Happy_GHC_Exts.I# i) `HappyStk` stk)
   -- NB: `happyShift` will simply pop the error token and carry on with
   --     `tk`. Hence we don't change `tk` in the call here
 
 -- See Note [Error recovery], phase (2).
 -- Enter resumption mode after reporting the error by calling `happyResume`.
 happyFixupFailed tk st sts (x `HappyStk` stk) =
-  let i = GET_ERROR_TOKEN(x) in
-  DEBUG_TRACE("`error` fixup failed.\n")
+  let i = (case x of { HappyErrorToken (Happy_GHC_Exts.I# i) -> i }) in
+  {- nothing -}
   let resume   = happyResume i tk st sts stk
       expected = happyExpectedTokens st sts in
   happyReport i tk expected resume
@@ -618,65 +616,65 @@ happyResume i tk st sts stk = pop_items [] st sts stk
     !(Happy_GHC_Exts.I# eof_i) = happy_n_terms Happy_Prelude.- 1   -- this is the token number of the EOF token
     happy_list_to_list :: Happy_IntList -> [Happy_Prelude.Int]
     happy_list_to_list (HappyCons st sts)
-      | LT(st, n_starts)
-      = [(Happy_GHC_Exts.I# st)]
+      | Happy_GHC_Exts.tagToEnum# (st Happy_GHC_Exts.<#  n_starts) :: Happy_Prelude.Bool
+      = [Happy_GHC_Exts.I# st]
       | Happy_Prelude.otherwise
-      = (Happy_GHC_Exts.I# st) : happy_list_to_list sts
+      = Happy_GHC_Exts.I# st : happy_list_to_list sts
 
     -- See (1) of Note [happyResume]
     pop_items catch_frames st sts stk
-      | LT(st, n_starts)
-      = DEBUG_TRACE("reached start state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ ", ")
+      | Happy_GHC_Exts.tagToEnum# (st Happy_GHC_Exts.<#  n_starts) :: Happy_Prelude.Bool
+      = {- nothing -}
         if Happy_Prelude.null catch_frames_new
-          then DEBUG_TRACE("no resumption.\n")
+          then {- nothing -}
                happyAbort
-          else DEBUG_TRACE("now discard input, trying to anchor in states " Happy_Prelude.++ Happy_Prelude.show (Happy_Prelude.map (happy_list_to_list . Happy_Prelude.fst) (Happy_Prelude.reverse catch_frames_new)) Happy_Prelude.++ ".\n")
+          else {- nothing -}
                discard_input_until_exp i tk (Happy_Prelude.reverse catch_frames_new)
       | (HappyCons st1 sts1) <- sts, _ `HappyStk` stk1 <- stk
       = pop_items catch_frames_new st1 sts1 stk1
       where
         !catch_frames_new
-          | HappyShift new_state <- happyDecodeAction (happyNextAction CATCH_TOK st)
-          , DEBUG_TRACE("can shift catch token in state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ ", into state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# new_state) Happy_Prelude.++ "\n")
-            Happy_Prelude.null (Happy_Prelude.filter (\(HappyCons _ (HappyCons h _),_) -> EQ(st,h)) catch_frames)
-          = (HappyCons new_state (HappyCons st sts), MK_ERROR_TOKEN(i) `HappyStk` stk):catch_frames -- MK_ERROR_TOKEN(i) is just some dummy that should not be accessed by user code
+          | HappyShift new_state <- happyDecodeAction (happyNextAction 1# st)
+          , {- nothing -}
+            not (any (\(HappyCons _ (HappyCons h _),_) -> (Happy_GHC_Exts.tagToEnum# (st Happy_GHC_Exts.==# h) :: Happy_Prelude.Bool)) catch_frames)
+          = (HappyCons new_state (HappyCons st sts), HappyErrorToken (Happy_GHC_Exts.I# i) `HappyStk` stk):catch_frames -- (HappyErrorToken (Happy_GHC_Exts.I# i)) is just some dummy that should not be accessed by user code
           | Happy_Prelude.otherwise
-          = DEBUG_TRACE("already shifted or can't shift catch in " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ "\n")
+          = {- nothing -}
             catch_frames
 
     -- See (2) of Note [happyResume]
     discard_input_until_exp i tk catch_frames
       | Happy_Prelude.Just (HappyCons st (HappyCons catch_st sts), catch_frame) <- some_catch_state_shifts i catch_frames
-      = DEBUG_TRACE("found expected token in state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ " after shifting from " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# catch_st) Happy_Prelude.++ ": " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# i) Happy_Prelude.++ "\n")
+      = {- nothing -}
         happyDoAction i tk st (HappyCons catch_st sts) catch_frame
-      | EQ(i,eof_i) -- is i EOF?
-      = DEBUG_TRACE("reached EOF, cannot resume. abort parse :(\n")
+      | Happy_GHC_Exts.tagToEnum# (i Happy_GHC_Exts.==# eof_i) :: Happy_Prelude.Bool -- is i EOF?
+      = {- nothing -}
         happyAbort
       | Happy_Prelude.otherwise
-      = DEBUG_TRACE("discard token " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# i) Happy_Prelude.++ "\n")
+      = {- nothing -}
         happyLex (\eof_tk -> discard_input_until_exp eof_i eof_tk catch_frames) -- eof
                  (\i tk   -> discard_input_until_exp i tk catch_frames)         -- not eof
 
-    some_catch_state_shifts _ [] = DEBUG_TRACE("no catch state could shift.\n") Happy_Prelude.Nothing
-    some_catch_state_shifts i catch_frames@(((HappyCons st sts),_):_) = try_head i st sts catch_frames
+    some_catch_state_shifts _ [] = {- nothing -} Happy_Prelude.Nothing
+    some_catch_state_shifts i catch_frames@((HappyCons st sts,_):_) = try_head i st sts catch_frames
       where
         try_head i st sts catch_frames = -- PRECONDITION: head catch_frames = (HappyCons st sts)
-          DEBUG_TRACE("trying token " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# i) Happy_Prelude.++ " in state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ ": ")
+          {- nothing -}
           case happyDecodeAction (happyNextAction i st) of
-            HappyFail     -> DEBUG_TRACE("fail.\n")   some_catch_state_shifts i (Happy_Prelude.tail catch_frames)
-            HappyAccept   -> DEBUG_TRACE("accept.\n") Happy_Prelude.Just (Happy_Prelude.head catch_frames)
-            HappyShift _  -> DEBUG_TRACE("shift.\n")  Happy_Prelude.Just (Happy_Prelude.head catch_frames)
+            HappyFail     -> {- nothing -}   some_catch_state_shifts i (Happy_Prelude.tail catch_frames)
+            HappyAccept   -> {- nothing -} Happy_Prelude.Just (Happy_Prelude.head catch_frames)
+            HappyShift _  -> {- nothing -}  Happy_Prelude.Just (Happy_Prelude.head catch_frames)
             HappyReduce r -> case happySimulateReduce r st sts of
               (HappyCons st1 sts1) -> try_head i st1 sts1 catch_frames
 
 happySimulateReduce r st sts =
-  DEBUG_TRACE("simulate reduction of rule " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# r) Happy_Prelude.++ ", ")
+  {- nothing -}
   let (# nt, len #) = happyIndexRuleArr r in
-  DEBUG_TRACE("nt " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# nt) Happy_Prelude.++ ", len: " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# len) Happy_Prelude.++ ", new_st ")
-  let !(sts1@(HappyCons st1 _)) = happyDrop len (HappyCons st sts)
+  {- nothing -}
+  let !sts1@(HappyCons st1 _) = happyDrop len (HappyCons st sts)
       new_st = happyIndexGotoTable nt st1 in
-  DEBUG_TRACE(Happy_Prelude.show (Happy_GHC_Exts.I# new_st) Happy_Prelude.++ ".\n")
-  (HappyCons new_st sts1)
+  {- nothing -}
+  HappyCons new_st sts1
 
 happyTokenToString :: Happy_Prelude.Int -> Happy_Prelude.String
 happyTokenToString i = happyTokenStrings Happy_Prelude.!! (i Happy_Prelude.- 2) -- 2: errorTok, catchTok
@@ -691,12 +689,12 @@ happyExpectedTokens :: Happy_Int -> Happy_IntList -> [Happy_Prelude.String]
 -- The recorded token numbers are then formatted with 'happyTokenToString' and
 -- returned.
 happyExpectedTokens st sts =
-  DEBUG_TRACE("constructing expected tokens.\n")
+  {- nothing -}
   Happy_Prelude.map happyTokenToString (search_shifts st sts [])
   where
     search_shifts st sts shifts = Happy_Prelude.foldr (add_action st sts) shifts (distinct_actions st)
     add_action st sts (Happy_GHC_Exts.I# i, Happy_GHC_Exts.I# act) shifts =
-      DEBUG_TRACE("found action in state " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# st) Happy_Prelude.++ ", input " Happy_Prelude.++ Happy_Prelude.show (Happy_GHC_Exts.I# i) Happy_Prelude.++ ", " Happy_Prelude.++ Happy_Prelude.show (happyDecodeAction act) Happy_Prelude.++ "\n")
+      {- nothing -}
       case happyDecodeAction act of
         HappyFail     -> shifts
         HappyAccept   -> shifts -- This would always be %eof or error... Not helpful
@@ -705,16 +703,16 @@ happyExpectedTokens st sts =
           (HappyCons st1 sts1) -> search_shifts st1 sts1 shifts
     distinct_actions st
       -- The (token number, action) pairs of all actions in the given state
-      = ((-1), (Happy_GHC_Exts.I# (happyIndexOffAddr happyDefActions st)))
+      = (-1, Happy_GHC_Exts.I# (happyIndexOffAddr happyDefActions st))
       : [ (i, act) | i <- [begin_i..happy_n_terms], act <- get_act row_off i ]
       where
         row_off = happyIndexOffAddr happyActOffsets st
         begin_i = 2 -- +2: errorTok,catchTok
     get_act off (Happy_GHC_Exts.I# i) -- happyIndexActionTable with cached row offset
-      | let off_i = PLUS(off,i)
-      , GTE(off_i,0#)
-      , EQ(happyIndexOffAddr happyCheck off_i,i)
-      = [(Happy_GHC_Exts.I# (happyIndexOffAddr happyTable off_i))]
+      | let off_i = off Happy_GHC_Exts.+# i
+      , Happy_GHC_Exts.tagToEnum# (off_i Happy_GHC_Exts.>=# 0#) :: Happy_Prelude.Bool
+      , Happy_GHC_Exts.tagToEnum# (happyIndexOffAddr happyCheck off_i Happy_GHC_Exts.==# i) :: Happy_Prelude.Bool
+      = [Happy_GHC_Exts.I# (happyIndexOffAddr happyTable off_i)]
       | Happy_Prelude.otherwise
       = []
 
@@ -763,3 +761,7 @@ happyDontSeq a b = b
 {-# NOINLINE happyFail #-}
 
 -- end of Happy Template.
+
+
+
+
