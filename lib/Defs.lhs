@@ -23,6 +23,7 @@ import Text.Parsec.String
 import qualified Text.Parsec.Expr as Expr
 import Data.Char
 import Data.Functor.Identity (Identity)
+import Language.Haskell.TH (parensE)
 
 \end{code}
 
@@ -466,10 +467,9 @@ formParser = Expr.buildExpressionParser parseTable parseTerm
 
 parseTable :: Expr.OperatorTable String () Identity Form
 parseTable = [
-  [Expr.Prefix (Neg <$ symbol "~")], 
-  [
+  [Expr.Prefix (Neg <$ symbol "~"),
     Expr.Prefix (Dia <$ symbol "<>"),
-    Expr.Prefix (Neg . Dia . Neg <$ symbol "[]") -- How to do this? We would like to accept the box operator, but it's not part of the grammar.
+    Expr.Prefix (Neg . Dia . Neg <$ symbol "[]")
   ],
   [
     Expr.Infix (And <$ symbol "&") Expr.AssocLeft,
@@ -477,7 +477,7 @@ parseTable = [
   ]]
 
 parseTerm :: Parser Form
-parseTerm = parseProp <|> parseBottom <|> parseNE <|> parens
+parseTerm = parens <|> parseProp <|> parseBottom <|> parseNE
 
 parseProp :: Parser Form
 parseProp = Prop <$> integer
@@ -492,7 +492,7 @@ symbol :: String -> Parser String
 symbol s = string s <* spaces
 
 integer :: Parser Int
-integer = read <$> (many1 digit) <* spaces
+integer = read <$> many1 digit <* spaces
 
 parens :: Parser Form
 parens = between (symbol "(") (symbol ")") formParser
