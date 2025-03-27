@@ -32,30 +32,30 @@ main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
     it "Figure 3b, [<>(p ^ q)]+" $
-      (m3b, s3b) |= enrich (MDia (ma `MOr` mb)) `shouldBe` False
+      (m3b, s3b) |= enrich (MDia (ma `MAnd` mb)) `shouldBe` False
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (ma `MOr` mb)) `shouldBe` True
 
   describe "Motivating Example" $ do
     it "(a) |= (a v b) == True" $
-      (mM, sMA) |= toBSML (ma `MAnd` mb) `shouldBe` True
+      (mM, sMA) |= toBSML (ma `MOr` mb) `shouldBe` True
     it "(a) |= [a v b]+  == True" $
-      (mM, sMA) |= (a `And` b) `shouldBe` True
+      (mM, sMA) |= enrich (ma `MOr` mb) `shouldBe` True
 
     it "(b) |= (a v b) == True" $
-      (mM, sMB) |= toBSML (ma `MAnd` mb) `shouldBe` True
+      (mM, sMB) |= toBSML (ma `MOr` mb) `shouldBe` True
     it "(b) |= [a v b]+ == True" $
-      (mM, sMB) |= (a `And` b) `shouldBe` True
+      (mM, sMB) |= enrich (ma `MOr` mb) `shouldBe` True
 
     it "(c) |= (a v b) == True" $
-      (mM, sMC) |= toBSML (ma `MAnd` mb) `shouldBe` True
+      (mM, sMC) |= toBSML (ma `MOr` mb) `shouldBe` True
     it "(c) |= [a v b]+ == False" $
-      (mM, sMC) |= (a `And` b) `shouldBe` False
+      (mM, sMC) |= enrich (ma `MOr` mb) `shouldBe` False
 
     it "(d) |= (a v b) == False" $
-      (mM, sMD) |= toBSML (ma `MAnd` mb) `shouldBe` False
+      (mM, sMD) |= toBSML (ma `MOr` mb) `shouldBe` False
     it "(d) |= [a v b]+  == False" $
-      (mM, sMD) |= (a `And` b) `shouldBe` False
+      (mM, sMD) |= enrich (ma `MOr` mb) `shouldBe` False
 
 
 \end{code}
@@ -123,8 +123,6 @@ The flatness test confirms that our implementation of ML formulas are flat.
       \(TPM m s) f -> (m,s) |= (f::Form) == all (\w -> (m, Set.singleton w) |= f) s
 
   where
-    a = Prop 1
-    b = Prop 2
     ma = MProp 1
     mb = MProp 2
 \end{code}

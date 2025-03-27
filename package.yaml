@@ -36,3 +36,10 @@ tests:
       - bsmlcheck
       - QuickCheck
       - hspec
+  semantictests:
+    main: semanticTests.lhs
+    source-dirs: test
+    dependencies:
+      - bsmlcheck
+      - QuickCheck
+      - hspec
