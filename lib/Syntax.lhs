@@ -2,10 +2,8 @@
 \label{sec:BSML_syntax}
 \begin{code}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DeriveGeneric #-}
 module Syntax where
 
-import GHC.Generics
 import Test.QuickCheck
 \end{code}
 This module describes the syntactical elements of BSML.
@@ -24,7 +22,7 @@ data Form
   | And Form Form
   | Or  Form Form
   | Dia Form
-  deriving (Eq,Show,Generic)
+  deriving (Eq,Show)
 \end{code}
 Readers familiar with Modal Logic (see e.g.\cite{BdRV}) should recognize this as
 the basic modal language, extended with \verb|NE|, the nonemptiness atom.
@@ -38,8 +36,8 @@ ppForm = \case
   Bot       -> "_|_"
   NE        -> "NE"
   Prop p    -> "p" ++ show p
-  Neg f     -> "!" ++ ppForm f
-  And f1 f2 -> "(" ++ ppForm f1 ++ " ^ " ++ ppForm f2 ++ ")"
+  Neg f     -> "~" ++ ppForm f
+  And f1 f2 -> "(" ++ ppForm f1 ++ " & " ++ ppForm f2 ++ ")"
   Or f1 f2  -> "(" ++ ppForm f1 ++ " v " ++ ppForm f2 ++ ")"
   Dia f     -> "<>" ++ ppForm f
 \end{code}
@@ -127,12 +125,16 @@ instance Arbitrary Form where
         Dia <$> f
       ]
     where f = scale (`div` 2) arbitrary
+\end{code}
+The choice to scale the size of the generator by dividing it by 2 is completely arbitrary,
+but seems to work well in practice and is used in similar projects, see e.g. \cite{gattinger2024:software:SMCDEL}.
 
+Last, we also define shrinks of formulas that empower QuickCheck to attempt
+simplifying counterexamples when/if it finds any.
+\begin{code}
   shrink (Neg f)     = [Bot, NE, f]      ++ [Neg f'      | f'        <- shrink f]
   shrink (And f1 f2) = [Bot, NE, f1, f2] ++ [And f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink (Or f1 f2)  = [Bot, NE, f1, f2] ++ [Or  f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink (Dia f)     = [Bot, NE, f]      ++ [Dia f'      | f'        <- shrink f]
   shrink _           = []
 \end{code}
-The choice to scale the size of the generator by dividing it by 2 is completely arbitrary,
-but seems to work well in practice and is used in similar projects, see e.g. \cite{gattinger2024:software:SMCDEL}.
