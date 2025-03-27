@@ -14,7 +14,6 @@ import Test.QuickCheck
 
 import Semantics
 import Syntax
-import ML
 import Models
 \end{code}
 

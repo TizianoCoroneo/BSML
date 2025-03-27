@@ -8,7 +8,6 @@ and test some properties.
 \begin{code}
 module Main where
 
-import qualified Data.Set as Set
 import Test.QuickCheck
 import Test.Hspec
 import Test.Hspec.QuickCheck
