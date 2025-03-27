@@ -17,6 +17,7 @@ dependencies:
   - parsec
   - random
   - template-haskell
+  - graphviz
 
 library:
   source-dirs: lib
