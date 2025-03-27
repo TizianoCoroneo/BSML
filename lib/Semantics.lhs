@@ -1,4 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
 \subsection{Semantics}
 \label{sec:BSML_semantics}
 
