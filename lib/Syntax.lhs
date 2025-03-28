@@ -21,8 +21,9 @@ data Form
   | Neg Form
   | And Form Form
   | Or  Form Form
+  | Gor Form Form
   | Dia Form
-  deriving (Eq,Show)
+  deriving (Eq,Ord,Show)
 \end{code}
 Readers familiar with Modal Logic (see e.g.\cite{BdRV}) should recognize this as
 the basic modal language, extended with \verb|NE|, the nonemptiness atom.
@@ -38,7 +39,8 @@ ppForm = \case
   Prop p    -> show p
   Neg f     -> "~" ++ ppForm f
   And f1 f2 -> "(" ++ ppForm f1 ++ " & " ++ ppForm f2 ++ ")"
-  Or f1 f2  -> "(" ++ ppForm f1 ++ " v " ++ ppForm f2 ++ ")"
+  Or f1 f2  -> "(" ++ ppForm f1 ++ " V " ++ ppForm f2 ++ ")"
+  Gor f1 f2 -> "(" ++ ppForm f1 ++ " \\V " ++ ppForm f2 ++ ")"
   Dia f     -> "<>" ++ ppForm f
 \end{code}
 
@@ -68,16 +70,20 @@ toptop = Neg Bot
 \end{code}
 
 As in \cite{Aloni2024}, we can use these notions of contradiction and tautology
-to interpret finite disjunctions and conjunctions:
+to interpret finite (global) disjunctions and conjunctions:
 
 \begin{code}
-bigor :: [Form] -> Form
-bigor [] = Bot
-bigor fs = foldr1 Or fs
+bigOr :: [Form] -> Form
+bigOr [] = Bot
+bigOr fs = foldr1 Or fs
 
-bigand :: [Form] -> Form
-bigand [] = toptop
-bigand fs = foldr1 And fs
+bigAnd :: [Form] -> Form
+bigAnd [] = toptop
+bigAnd fs = foldr1 And fs
+
+bigGor :: [Form] -> Form
+bigGor [] = botbot
+bigGor fs = foldr1 Gor fs
 \end{code}
 
 Note that we could have (semantically equivalently) defined e.g.
@@ -122,6 +128,7 @@ instance Arbitrary Form where
         Neg <$> f,
         And <$> f <*> f,
         Or  <$> f <*> f,
+        Gor <$> f <*> f,
         Dia <$> f
       ]
     where f = scale (`div` 2) arbitrary
@@ -136,5 +143,6 @@ simplifying counterexamples when/if it finds any.
   shrink (Dia f)     = [Bot, NE, f]      ++ [Dia f'      | f'        <- shrink f]
   shrink (And f1 f2) = [Bot, NE, f1, f2] ++ [And f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink (Or f1 f2)  = [Bot, NE, f1, f2] ++ [Or  f1' f2' | (f1',f2') <- shrink (f1,f2)]
+  shrink (Gor f1 f2) = [Bot, NE, f1, f2] ++ [Gor f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink _           = []
 \end{code}
