@@ -1,7 +1,7 @@
 \subsection{Modal Logic}
 
 To define the \emph{pragmatic enrichment} function mentioned in the introduction,
-we define a type to represent formulas of (basic) Modal Logic (ML) and implement
+we define a type to represent formulas of basic Modal Logic (ML) and implement
 the standard Kripke semantics.
 \begin{code}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -38,7 +38,7 @@ defined as
 \begin{align*}
     [p]^+ &\coloneqq p \land \texttt{NE} && \text{for } p \in \texttt{Prop}\\
     [\heartsuit \phi]^+ &\coloneqq \heartsuit [\phi]^+ \land \texttt{NE} && \text{for } \heartsuit \in \{\lnot, \lozenge\} \\
-    [\phi \odot \psi]^+ &\coloneqq ([\phi]^+ \odot [\psi]^+) \land \texttt{NE} && \text{for } \odot \in \{\lor, \land}
+    [\phi \odot \psi]^+ &\coloneqq ([\phi]^+ \odot [\psi]^+) \land \texttt{NE} && \text{for } \odot \in \{\lor, \land\}
 \end{align*}
 which is straightforward to implement in Haskell.
 \begin{code}
