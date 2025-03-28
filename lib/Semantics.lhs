@@ -122,6 +122,7 @@ instance Supportable KrM Team Form where
   (m,s) |= Neg f   = (m,s) =| f
   (m,s) |= And f g = (m,s) |= f && (m,s) |= g
   (m,s) |= Or f g  = any (\(t,u) -> (m,t) |= f && (m,u) |= g) $ teamParts s
+  (m,s) |= Gor f g = (m,s) |= f || (m,s) |= g
   (m,s) |= Dia f   = all (any (\t -> not (null t) && (m,t) |= f) . subsequences . rel' m) s
 
 instance Antisupportable KrM Team Form where
@@ -131,6 +132,7 @@ instance Antisupportable KrM Team Form where
   (m,s) =| Neg f   = (m,s) |= f
   (m,s) =| And f g = any (\(t,u) -> (m,t) =| f && (m,u) =| g) $ teamParts s
   (m,s) =| Or f g  = (m,s) =| f && (m,s) =| g
+  (m,s) =| Gor f g = (m,s) =| Or f g
   (m,s) =| Dia f   = all (\w -> (m, rel' m w) =| f) s
 \end{code}
 
