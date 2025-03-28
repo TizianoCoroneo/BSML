@@ -35,6 +35,7 @@ reading the string. These tokens were described in the module Lexer.
 > NOT { TokenNot _ }
 > BOX { TokenBox _ }
 > DMD { TokenDmd _ }
+> GDIS {TokenGDIS _}
 > NUM { TokenInt $$ _ }
 > '(' { TokenOB _ }
 > ')' { TokenCB _}
@@ -49,6 +50,7 @@ This behaviour keeps in line with the way we would like to parse formulae in our
 \begin{code}
 > %left OR
 > %left AND
+> %left GDIS
 >
 > %%
 \end{code}
@@ -64,6 +66,7 @@ regular precedence rules, and hence need to be accounted for.
 > Form : BrForm { $1 }
 > | Form AND Form { And $1 $3 }
 > | Form OR Form { Or $1 $3 }
+> | Form GDIS Form {Gor $1 $3}
 > BrForm :: { Form }
 > BrForm : NUM { Prop $1 }
 > | BOT { Bot }
@@ -73,6 +76,7 @@ regular precedence rules, and hence need to be accounted for.
 > | DMD BrForm { Dia $2 }
 > | '(' Form AND Form ')' { And $2 $4 }
 > | '(' Form OR Form ')' { Or $2 $4 }
+> | '(' Form GDIS Form ')' { Gor $2 $4}
 \end{code}
 
 Next, we outline error messages for our parser. These error messages (very helpfully and wonderfully 
