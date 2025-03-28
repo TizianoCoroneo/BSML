@@ -4,6 +4,7 @@ data Token a
     | TokenNE  { apn :: a}
     | TokenBot { apn :: a }
     | TokenCon { apn :: a }
+    | TokenGDis { apn :: a }
     | TokenDis { apn :: a }
     | TokenNot { apn :: a }
     | TokenBox { apn :: a }
