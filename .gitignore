@@ -27,3 +27,5 @@ cabal.sandbox.config
 dist
 dist-*
 *.cabal
+lib/lexer.hs
+lib/parser.hs
