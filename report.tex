@@ -20,7 +20,7 @@
 
 \begin{abstract}
 Bilateral State-based Modal Logic (BSML) was introduced in \cite{Aloni2022} to model Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
-interpretations that verify a sentence by empty configuration (\textit{neglect-zero tendency}). To preclude such empty configurations, BSML uses state-based semantics (propositions evaluated at sets of worlds rather than individual worlds) and extends basic modal logic with a pragmatic enrichment function $[]^+$ which requires supporting states to be non-empty.
+interpretations that verify a sentence by empty configuration (\textit{neglect-zero tendency}). To preclude such empty configurations, BSML uses state-based semantics (propositions evaluated at sets of worlds rather than individual worlds) and extends basic modal logic with a pragmatic enrichment function $[]^+$ which requires supporting states to be nonempty.
 We implement an explicit model checker for BSML and use this to verify some properties, like Free-Choice inference, as described in \cite{Aloni2024}.
 \end{abstract}
 
@@ -32,7 +32,11 @@ We implement an explicit model checker for BSML and use this to verify some prop
 
 \section{Model checking BSML}\label{sec:BSML}
 
-This section describes the implementation of the explicit model checker for BSML.
+This section describes the implementation of the explicit model checker for BSML. 
+More precisely, we will focus on $\mathrm{BSML}^{\gor}$, an extension of BSML with so-called \emph{global disjunction}. 
+This extension was not chosen for conceptual reasons, but merely to make the implementation of Natural Deduction more palatable, as we will see later. 
+Throughout this report, we will not need to differentiate between BSML and $\mathrm{BSML}^{\gor}$, so we will be somewhat sloppy and simply write BSML for our language. 
+
 
 \input{lib/Syntax.lhs}
 
@@ -185,8 +189,6 @@ This formula more accurately represents the meaning of a sentence in linguistics
 To accurately model FC, we should then be able to infer $\lozenge \alpha \land \lozenge \beta$ from $[\lozenge (\alpha \lor \beta)]^+$.
 
 -- Insert QuickCheck test to show this holds
-
-\section{Parsing}
 
 \input{lib/lexer.lhs}
 
