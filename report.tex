@@ -1,108 +1,202 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage{amsmath, amsthm, mathtools, fontenc, graphicx}
+\usepackage{subcaption}
 \input{latexmacros.tex}
+\newcommand{\mycomment}[1]{}
 
-\title{Project Report - Beta}
+\title{Model Checking BSML}
 \author{N. Cohen, T. Coroneo, V. Iyer, G. Kaminer, and L. Madison}
 \date{\today}
-\hypersetup{pdfauthor={Me}, pdftitle={Project Report - Beta}}
+\hypersetup{pdfauthor={FP 2025, Group 3}, pdftitle={Model Checking BSML}}
 
 \setlength{\parskip}{10pt plus 1pt minus 1pt}
 
 \DeclareMathOperator{\botbot}{\rotatebox{90}{$\models$}}
 \DeclareMathOperator{\toptop}{\raisebox{0pt}[0pt][0pt]{\rotatebox[origin=c]{270}{$\models$}}}
 
-
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-We implement an explicit model checker for bilateral state-based modal logic
-(BSML), as described in \cite{Aloni2024}. BSML has been used to account for
-Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
-interpretations that verify a sentence by empty configuration  (\textit{neglect-zero tendency}).
+Bilateral State-based Modal Logic (BSML) was introduced in \cite{Aloni2022} to model Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
+interpretations that verify a sentence by empty configuration (\textit{neglect-zero tendency}). To preclude such empty configurations, BSML uses state-based semantics (propositions evaluated at sets of worlds rather than individual worlds) and extends basic modal logic with a pragmatic enrichment function $[]^+$ which requires supporting states to be non-empty.
+We implement an explicit model checker for BSML and use this to verify some properties, like Free-Choice inference, as described in \cite{Aloni2024}.
 \end{abstract}
-
-Free-Choice (\textit{FC}) inferences are instances of conjunctive meaning being unexpectedly
-derived from a disjunctive sentence. In the following example, a modalized disjunction yields
-a conjunction of modals.
-
-\begin{itemize}
-\item You may go to the beach or to the cinema $\rightsquigarrow$ You may go to the beach
- and you may go to the cinema
-\item $\Diamond(b\vee c)\rightsquigarrow\Diamond b \wedge \Diamond c$
-\end{itemize}
-
-Aloni (2022) explain that in interpreting a sentence, a speaker identifies which are the structures of
-reality that would reflect the sentence (the models in which the sentence would be assertable).
-In our disjunction, there are four associated worlds:
-
-\begin{enumerate}
-\item $W_{bc}$ in which both $b$ and $c$ are true (you go to both the beach and the cinema)
-\item $W_b$ in which $b$ is true (you go to the beach)
-\item $W_c$ in which $c$ is true (you go to the cinema)
-\item $W_z$ in which neither $b$ nor $c$ is true (you don't go anywhere)
-\end{enumerate}
-
-We can use BSML to model the information states (i.e. sets of worlds) in which the disjunction $b\vee c$
-would be assertable. A proposition is assertable at a state $s$ if it is assertable in all its substates.
-A disjunction is assertable in a state $s$ if each of the disjuncts is supported in a substate of $s$.
-
-\begin{enumerate}
-\item In a state consisting of $W_b$ and $W_c$, $b\vee c$ is assertable
-\item In a state consisting of $W_{bc}$ and $W_b$ (or a state consisting of $W_{bc}$ and $W_c$),
-$b\vee c$ is assertable
-\item In a state consisting of $W_b$ (or a state consisting of $W_c$), $b\vee c$ is assertable since each of the
-disjuncts is supported in a substate. $b$ is supported in $W_b$, and $c$ is supported in the empty state.
-\item In a state consisting of $W_z$ and $W_b$ (and any other state which includes $W_z$), $b\vee c$ is
-\textit{not} assertable because in $W_z$ both $b$ and $c$ are false, so this state would leave open the
-possibility that neither $b$ nor $c$ is the case.
-\end{enumerate}
-
-So among the four types of states, $b\vee c$ is assertable in all but the last. This is a problem, because if
-$b\vee c$ is assertable In a state consisting of only $W_b$ (or a state consisting of only $W_c$) then we have
-that $\Diamond(b\vee c)$ is true while $\Diamond b \wedge \Diamond c$ is false, so the FC inference fails. The
-problematic state, then, is the zero-model: one of the states which it uses to satisfy the disjunction is the
-empty state.
-
-How do we account for FC inferences then? Aloni argues pragmatically that a speaker would not consider the
-zero-model as one of the candidate states. Neglecting the zero model then, the FC inference would hold
-because the only states that would support $b\vee c$ would be (1) or (2). To model neglect-zero (to make
-sure that $b\vee c$ is not assertable in the zero-model), we require that to satisfy a disjunction, the state
-must be the union of two non-empty substates rather than just the union of two substates. So we enrich each
-formula with a $[]^+$ function which conjuncts the non-emptiness atom (NE) to each formula and all its
-subformulas.
-
-After enrichment, the disjunction $b\vee c$ is no longer assertable in a state consisting of only $W_b$
-(or a state consisting of only $W_c$) since the non-emptiness atom (NE) would not be supported in all the substates.
-Finally then, if the only states in which the disjunction holds are (1) and (2), then the FC inference holds.
 
 \tableofcontents
 
 \clearpage
 
-% We include one file for each section. The ones containing code should
-% be called something.lhs and also mentioned in the .cabal file.
+\input{Intro.tex}
 
-\input{Howto.tex}
+\section{Model checking BSML}\label{sec:BSML}
+
+This section describes the implementation of the explicit model checker for BSML.
 
 \input{lib/Syntax.lhs}
 
 \input{lib/Semantics.lhs}
 
+
+\subsection{Verifying basic properties}
+
+\begin{figure}[!h]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (2.5,13.75) circle (0.5cm) node {$w_p$};
+                \draw (4.25,13.75) circle (0.5cm) node {$w_q$};
+                \draw (2.5,11.5) circle (0.5cm) node {$w_{pq}$};
+                \draw (4.25,11.5) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (1.75,14.75) rectangle (5.25,12.75);
+                \draw [rounded corners=3.0] (3.5,14.5) rectangle (5,13);
+                \draw [rounded corners=3.0] (1.5,15) rectangle (5.5,10.75);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3a}
+        \label{fig:3a}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
+                \draw (3,14.25) circle (0.5cm) node {$w_q$};
+                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
+                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (0,10.75) rectangle (3.75,12.5);
+                \draw [rounded corners=3.0] (-0.25,15) rectangle (4,10.5);
+                \draw [->, >=stealth] (1.25,11.75) .. controls (2.25,12) and (2,10.5) .. (1,11.25);
+                \draw [->, >=stealth] (0.75,12.25) -- (0.75,13.75);
+                \draw [->, >=stealth] (3,12.25) -- (3,13.75);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3b}
+        \label{fig:3b}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
+                \draw (3,14.25) circle (0.5cm) node {$w_q$};
+                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
+                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (0,11) rectangle (1.5,12.5);
+                \draw [rounded corners=3.0] (-0.25,15) rectangle (3.75,10.75);
+                \draw [->, >=stealth] (0.75,12.25) -- (0.75,13.75);
+                \draw [->, >=stealth] (0.75,12.25) -- (3,13.75);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3c}
+        \label{fig:3c}
+    \end{subfigure}
+    \caption{}
+    \label{fig:all}
+\end{figure}
+
+\section{Verifying inference}
+
+\subsection{Pragmatic enrichment}
 \input{lib/ML.lhs}
+\begin{figure}[!h]
+    \centering
+    \begin{subfigure}[b]{0.23\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (2.5,13.75) circle (0.5cm) node {$w_p$};
+                \draw (4.25,13.75) circle (0.5cm) node {$w_q$};
+                \draw (2.5,11.5) circle (0.5cm) node {$w_{pq}$};
+                \draw (4.25,11.5) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (1.75,14.75) rectangle (5.25,12.75);
+                \draw [rounded corners=3.0] (1.5,15) rectangle (5.5,10.75);
+            \end{tikzpicture}%
+        }
+        \caption{$\vDash(p\vee q)$,$\vDash$}
+        \label{fig:3a}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.23\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
+                \draw (3,14.25) circle (0.5cm) node {$w_q$};
+                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
+                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (0,14.75) rectangle (1.7,10.75);
+                \draw [rounded corners=3.0] (-0.25,15) rectangle (4,10.5);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3b}
+        \label{fig:3b}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.23\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
+                \draw (3,14.25) circle (0.5cm) node {$w_q$};
+                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
+                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
+                \draw [rounded corners=3.0] (2,14.75) rectangle (3.5,13.5);
+                \draw [rounded corners=3.0] (-0.25,15) rectangle (3.75,10.75);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3c}
+        \label{fig:3c}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.23\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{%
+            \begin{tikzpicture}[every node/.style={font=\LARGE}]
+                \draw  (-8.75,5) circle (0.75cm) node {\LARGE $w_a$} ;
+                \draw  (-8.75,2.75) circle (0.75cm) node {\LARGE $w_b$} ;
+                \draw  (-6.25,5.5) circle (0.75cm) node {\LARGE $w_{ab}$} ;
+                \draw  (-6.5,2.75) circle (0.75cm) node {\LARGE $w_{\emptyset}$} ;
+                \draw [short] (-9.75,5.5) -- (-9.75,1.75);
+                \draw [short] (-9.75,1.75) -- (-6,1.75);
+                \draw [short] (-6,1.75) .. controls (-5.5,1.75) and (-5,2.75) .. (-6,3.75);
+                \draw [short] (-6,3.75) -- (-8,5.75);
+                \draw [short] (-9.75,5.5) .. controls (-9.5,6.25) and (-8.5,6.25) .. (-8,5.75);
+                \draw [rounded corners = 3] (-10,6.5) rectangle (-5.25,1.5);
+            \end{tikzpicture}%
+        }
+        \caption{Example 3d}
+        \label{fig:3d}
+    \end{subfigure}
+    \caption{}
+    \label{fig:all}
+\end{figure}
+\subsection{Free-Choice inference}
+The way FC-inference is now modelled, is that given a formula/statement like $\lozenge (\alpha \lor \beta)$ in $\mathrm{ML}$, we enrich it to obtain a formula $\mathrm{BSML}$:
+\[
+    [\lozenge (\alpha \lor \beta)]^+ = \lozenge ((\alpha \land \texttt{NE}) \lor (\beta \land \texttt{NE})) \land \texttt{NE}
+\]
+This formula more accurately represents the meaning of a sentence in linguistics, given speakers' distaste for null verification.
+To accurately model FC, we should then be able to infer $\lozenge \alpha \land \lozenge \beta$ from $[\lozenge (\alpha \lor \beta)]^+$.
 
+-- Insert QuickCheck test to show this holds
 
-%\input{exec/Main.lhs}
+\section{Parsing}
 
 \input{lib/lexer.lhs}
 
 \input{lib/Parser.ly}
 
-\input{test/simpletests.lhs}
+\section{Natural Deduction}
 
-\input{Conclusion.tex}
+\section{Future work}
+-- Efficiency\\
+-- Proof search
 
 \addcontentsline{toc}{section}{Bibliography}
 \bibliographystyle{alpha}
