@@ -2,7 +2,15 @@
 \label{sec:BSML_syntax}
 \begin{code}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE RankNTypes #-}
 module Syntax where
+
+import Data.Data (Data)
+
+import Control.Lens
+import Control.Lens.Extras (is)
 
 import Test.QuickCheck
 \end{code}
@@ -23,14 +31,17 @@ data Form
   | Or  Form Form
   | Gor Form Form
   | Dia Form
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord,Show,Data)
 \end{code}
 Readers familiar with Modal Logic (see e.g.\cite{BdRV}) should recognize this as
-the basic modal language, extended with \verb|NE|, the nonemptiness atom.
-As we will see when defining the semantics, this atom is used to exclude the
+the basic modal language, extended with \verb|NE|, the nonemptiness atom, and
+$\gor$, global disjunction.
+As we will see when defining the semantics, \verb|NE|is used to exclude the
 assertion of logical statements due to empty information-configurations (i.e. empty states/teams).
 
-For the sake of more legible output, we also define a pretty-printer for formulas:
+For the sake of more legible output, we also define a pretty-printer for formulas.
+Note that we print $\gor$ as \verb|V/| rather than \verb|\V| to avoid having to
+worry about the escape character.
 \begin{code}
 ppForm :: Form -> String
 ppForm = \case
@@ -39,8 +50,8 @@ ppForm = \case
   Prop p    -> show p
   Neg f     -> "~" ++ ppForm f
   And f1 f2 -> "(" ++ ppForm f1 ++ " & " ++ ppForm f2 ++ ")"
-  Or f1 f2  -> "(" ++ ppForm f1 ++ " V " ++ ppForm f2 ++ ")"
-  Gor f1 f2 -> "(" ++ ppForm f1 ++ " \\V " ++ ppForm f2 ++ ")"
+  Or f1 f2  -> "(" ++ ppForm f1 ++ " v " ++ ppForm f2 ++ ")"
+  Gor f1 f2 -> "(" ++ ppForm f1 ++ " V/ " ++ ppForm f2 ++ ")"
   Dia f     -> "<>" ++ ppForm f
 \end{code}
 
@@ -145,4 +156,44 @@ simplifying counterexamples when/if it finds any.
   shrink (Or f1 f2)  = [Bot, NE, f1, f2] ++ [Or  f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink (Gor f1 f2) = [Bot, NE, f1, f2] ++ [Gor f1' f2' | (f1',f2') <- shrink (f1,f2)]
   shrink _           = []
+\end{code}
+
+\subsubsection{Boilerplate for subformulas}
+This section is slightly technical and can safely be skipped.
+It introduces some functions that allow us to check properties of subformulas (e.g. whether a formula contains \verb|NE| anywhere in its subformulas).
+
+The \verb|Lens|-library defines a typeclass \verb|Plated| that implements a lot
+of boilerplate code for the transitive descendants of values of recursively defined types,
+so let us make \verb|Form| an instance.
+\begin{code}
+-- Use default implementation: plate = uniplate
+instance Plated Form
+\end{code}
+
+We also derive a prism corresponding to every constructor of \verb|Form|.
+\begin{code}
+-- Derives prisms _Bot, _NE, ..., _Gor, _Dia
+makePrisms ''Form
+\end{code}
+For readers unfamiliar with this, a\verb|Prism| is to a constructors what a \verb|Lens| is to a field.
+For example, the derived \verb|Prism| for \verb|Or| is of type
+\begin{verbatim}
+_Or :: Prism' Form (Form, Form)
+\end{verbatim}
+which can loosely be interpreted as a pair of functions; one that turns a
+\verb|(Form, Form)| into a \verb|Form| (by applying \verb|Or| in this case), and one that
+tries to turn a \verb|Form| into a \verb|(Form, Form)|
+(in this case, by taking the arguments out of the constructor if the formula is a disjunction).
+As we are familiar with from \verb|Lens|, this is suitably generalized.
+
+Now, we can e.g. check whether a formula uses the constructors \verb|NE| or \verb|Gor|
+by seeing if any of its transitive descendants is built using one of these constructors.
+\begin{code}
+isBasic :: Form -> Bool
+isBasic = any ((||) . is _NE <*> is _Gor) . universe
+\end{code}
+Or more generally, check whether a certain constructor was used.
+\begin{code}
+hasCr :: Prism' Form fs -> Form -> Bool
+hasCr = (. universe) . any . is
 \end{code}
