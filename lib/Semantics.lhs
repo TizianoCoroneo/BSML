@@ -197,11 +197,12 @@ of propositions $V(w)$ that hold at $w$.
 When finding counterexamples, it is useful to find models that are as small as possible,
 so we also define \verb|shrink| that tries to restrict the worlds of the model.
 \begin{code}
-  shrink m = do
-    ws' <- init $ subsequences $ worlds m
-    let r' = IntMap.fromList [(w, rel' m w `intersect` ws') | w <- ws']
-    let v' = IntMap.filterWithKey (const . (`elem` ws')) $ val m
-    KrM ws' r' <$> shrinkVal v'
+  shrink m = [ 
+    let 
+      r' = IntMap.fromList [(w, rel' m w `intersect` ws') | w <- ws'] 
+      v'' = IntMap.filterWithKey (const . (`elem` ws')) v'
+    in KrM ws' r' v'' 
+    | (ws', v') <- shrink (worlds m, val m) ]
 \end{code}
 
 When testing, we will often want to generate a random model \emph{with} a random
@@ -224,7 +225,7 @@ instance Arbitrary TeamPointedModel where
     s <- sublistOf $ worlds m
     return (TPM m s)
 
-  shrink (TPM m s) = filter (\(TPM m' s') -> s' `isSubsequenceOf` worlds m') (TPM <$> shrink m <*> shrinkList' s)
+  shrink (TPM m s) = [ TPM m' s' | (m', s') <- shrink (m, s), s' `isSubsequenceOf` worlds m' ]
 
 instance Arbitrary WorldPointedModel where
   arbitrary = do
@@ -232,7 +233,7 @@ instance Arbitrary WorldPointedModel where
     w <- elements $ worlds m
     return (WPM m w)
 
-  shrink (WPM m w) = filter (\(WPM m' w') -> w' `elem` worlds m') (WPM <$> shrink m <*> [w])
+  shrink (WPM m w) = [ WPM m' w | m' <- shrink m, w `elem` worlds m' ]
 \end{code}
 Note that when shrinking, we should only allow shrinks where the world/team is still
 contained in the model.
