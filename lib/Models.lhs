@@ -91,12 +91,12 @@ u3 = [0..3]
 r3a, r3b, r3c :: Rel
 r3a = IntMap.fromList $ map (, []) u3
 
-r3b = IntMap.fromList $ map (\u -> (u, r u)) u3 where -- version without PHD
+r3b = IntMap.fromList $ map (\u -> (u, r u)) u3 where -- version without PhD
   r 2 = [wp, wpq]
   r 3 = [wq]
   r _ = []
 
-r3c = IntMap.fromList $ (,) <*> r <$> u3 where -- version with PHD
+r3c = IntMap.fromList $ (,) <*> r <$> u3 where -- version with PhD
   r 2 = [wp, wq]
   r _ = []
 

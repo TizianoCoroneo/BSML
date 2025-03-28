@@ -156,6 +156,27 @@ subsetOf :: Ord a => [a] -> Gen (Set a)
 subsetOf = (Set.fromList <$>) . sublistOf
 \end{code}
 
+When shrinking the valuation of models, we want to have QuickCheck try valuation
+with fewer propositions occurring in the model, but it does not make sense to shrink
+the values of the propositions, so we define the following functions to only shrink
+which propositions occur:
+\begin{code}
+-- Shrink a list without shrinking individual elements
+shrinkList' :: [a] -> [[a]]
+shrinkList' = shrinkList (const [])
+
+-- Shrink a set without shrinking individual values
+shrinkSet :: Set Proposition -> [Set Proposition]
+shrinkSet = fmap Set.fromList . shrinkList' . Set.toList
+
+-- Shrink a valuation by uniformly restricting the occuring propositions
+shrinkVal :: Val -> [Val]
+shrinkVal v = do
+  let allProps = Set.unions v
+  newProps <- shrinkSet allProps
+  return (Set.intersection newProps <$> v)
+\end{code}
+
 Then, an arbitrary model $M = (W, R, V)$ can be generated as follows:
 
 \begin{code}
@@ -180,7 +201,7 @@ so we also define \verb|shrink| that tries to restrict the worlds of the model.
     ws' <- init $ subsequences $ worlds m
     let r' = IntMap.fromList [(w, rel' m w `intersect` ws') | w <- ws']
     let v' = IntMap.filterWithKey (const . (`elem` ws')) $ val m
-    return (KrM ws' r' v')
+    KrM ws' r' <$> shrinkVal v'
 \end{code}
 
 When testing, we will often want to generate a random model \emph{with} a random
@@ -203,7 +224,7 @@ instance Arbitrary TeamPointedModel where
     s <- sublistOf $ worlds m
     return (TPM m s)
 
-  shrink (TPM m s) = filter (\(TPM m' s') -> s' `isSubsequenceOf` worlds m') (flip TPM s <$> shrink m)
+  shrink (TPM m s) = filter (\(TPM m' s') -> s' `isSubsequenceOf` worlds m') (TPM <$> shrink m <*> shrinkList' s)
 
 instance Arbitrary WorldPointedModel where
   arbitrary = do
@@ -211,7 +232,7 @@ instance Arbitrary WorldPointedModel where
     w <- elements $ worlds m
     return (WPM m w)
 
-  shrink (WPM m w) = filter (\(WPM m' w') -> w' `elem` worlds m') (flip WPM w <$> shrink m)
+  shrink (WPM m w) = filter (\(WPM m' w') -> w' `elem` worlds m') (WPM <$> shrink m <*> [w])
 \end{code}
 Note that when shrinking, we should only allow shrinks where the world/team is still
 contained in the model.
