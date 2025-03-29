@@ -77,7 +77,7 @@ regular precedence rules, and hence need to be accounted for.
 > | '(' Form GDIS Form ')' { Gor $2 $4}
 \end{code}
 
-Next, we define error messages for our parser, as in \cite{Katejan}
+Next, we define error messages for our parser, as in \cite{Katejan}.
 These error messages describe where the error occurs exactly in the string, and why Happy failed
 to parse it.
 
