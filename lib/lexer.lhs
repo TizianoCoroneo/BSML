@@ -1,6 +1,6 @@
 \section{Lexer}
 
-Below we describe a brief code for a lexer we built for BSML formulae. The lexer
+Below we describe a brief code for a lexer we built for BSML formulas. The lexer
 was built to utilise the alex lexing tool mentioned in class.
 
 We note that this code is heavily based on the code of Katejan Dvoracek,
