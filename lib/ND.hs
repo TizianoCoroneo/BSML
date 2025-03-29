@@ -1,15 +1,62 @@
-module ND where
+module ND
+  (
+    Proof
+  , sorry
+  , assume
+
+  -- Rules for &
+  , andIntro
+  , andElimL
+  , andElimR
+
+  -- Rules for ~
+  , negIntro
+  , negElim
+  , negnegElim
+  , dmAnd
+  , dmOr
+  , neNegElim
+
+  -- Rules for v
+  , orIntro
+  , orWkn
+  , orComm
+  , orAss
+  , orElim
+  , orMon
+
+  -- Rules for _|_ and NE
+  , botElim
+  , botbotCtr
+
+  -- Basic modal rules
+  , diaMon
+  , boxMon
+  , diaBoxInter
+
+  -- Rules governing the interaction of the modalities and connectives
+  , diaSep
+  , diaJoin
+  , boxInst
+  , boxDiaJoin
+
+  -- Propositional rules involving V/
+  , gorIntroL
+  , gorIntroR
+  , gorElim
+  , orGorDistr
+  , dmGor
+  , neIntro
+
+  -- Modal rules for V/
+  , diaGorOrConv
+  , boxGorOrConv
+  ) where
 
 import Syntax
 
 import Data.Set (Set)
 import qualified Data.Set as Set
-
-hasNE :: Form -> Bool
-hasNE = hasCr _NE
-
-hasGor :: Form -> Bool
-hasGor = hasCr _Gor
 
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
@@ -20,6 +67,14 @@ sorry = flip Prf mempty
 
 assume :: Form -> Proof
 assume = Prf <*> Set.singleton
+
+-- Needed for checking side-conditions
+hasNE :: Form -> Bool
+hasNE = hasCr _NE
+
+hasGor :: Form -> Bool
+hasGor = hasCr _Gor
+
 
 -- (a) Rules for &
 
@@ -86,7 +141,8 @@ orAss _ = error "Cannot apply vAss, conclusion is not a nested disjunction!"
 orElim :: Proof -> Proof -> Proof -> Proof
 orElim (Prf (Or f g) ass) (Prf h ass1) (Prf h' ass2)
   | h /= h' = error "Cannot apply vElim, conclusions of latter proofs do not match!"
-  | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged non-basic assumptions."
+  | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged assumptions containing NE!"
+  | hasGor h = error "Cannot apply vElim, latter conclusion contains V/."
   | otherwise = Prf h $ ass <> ass'
   where ass' = Set.delete f ass1 <> Set.delete g ass2
 orElim _ _ _ = error "Cannot apply vElim, conclusion of first proof is not a disjunction!"
@@ -144,7 +200,7 @@ boxDiaJoin :: Proof -> Proof -> Proof
 boxDiaJoin (Prf (Neg (Dia (Neg f))) ass1) (Prf (Dia g) ass2) = Prf (box (f `Or` g)) $ ass1 <> ass2
 boxDiaJoin _ _ = error "Cannot apply []<>Join, conclusions are not of correct form!"
 
--- (g) Propositional rules involving \V
+-- (g) Propositional rules involving V/
 
 gorIntroL :: Form -> Proof -> Proof
 gorIntroL g (Prf f ass) = Prf (f `Gor` g) ass
@@ -169,7 +225,7 @@ dmGor _ = error "Cannot apply DMV/, conclusion is not of correct form!"
 neIntro :: Proof
 neIntro = Prf (Bot `Gor` NE) mempty
 
--- (h) Modal rules for \V
+-- (h) Modal rules for V/
 
 diaGorOrConv :: Proof -> Proof
 diaGorOrConv (Prf (Dia (f `Gor` g)) ass) = Prf (Dia f `Or` Dia g) ass
