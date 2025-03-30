@@ -3,7 +3,8 @@
 
 We can use the library QuickCheck to test the enriched behavior of our implementation of BSML, to make sure we correctly implemented FC.
 
-\hide{\begin{code}
+\hide{
+\begin{code}
 module Main where
 
 import Test.QuickCheck
@@ -16,13 +17,14 @@ import Syntax
 import ML
 import Models ( m3b, m3c, mM, s3b, s3c, sMA, sMB, sMC, sMD )
 
-\end{code}}
+\end{code}
+}
 
 The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
 The "Figure 3" section in the tests corresponds to Figure 1 described above in a previous section of the paper. The "Motivating Example" uses the Figure 2 models in order to show our disjunction behaves as expected.
-The paper \cite{Aloni2024} describes some formulas that make use of enrichment that must hold in these models. 
+The paper \cite{Aloni2024} describes some formulas that make use of enrichment that must hold in these models.
 
 
 \begin{code}
@@ -33,7 +35,7 @@ main = hspec $ do
       (m3b, s3b) |= enrich (MDia (ma `MAnd` mb)) `shouldBe` False
     it "Figure 3c, [<>(p v q)]+" $
       (m3c, s3c) |= enrich (MDia (ma `MOr` mb)) `shouldBe` True
-      
+
   describe "Motivating Example" $ do
     it "(a) |= (a v b) == True" $
       (mM, sMA) |= toBSML (ma `MOr` mb) `shouldBe` True
