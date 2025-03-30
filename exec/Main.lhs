@@ -1,6 +1,6 @@
 \section{An Executable Function}\label{sec:Main}
 
-We now describe a very simple executable function. The function below asks the user to provide it a formula. 
+We now describe a very simple executable function. Upon writing \verb|main| in ghci, the function asks the user to provide a BSML formula as input. 
 Using the parser, we parse this string, and try to come up with an example that does not satisfy the formula. 
 
 Note that as with any other QuickCheck based testing suite, the function's inability to find a counter-example does not suggest that 
