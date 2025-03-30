@@ -1,3 +1,5 @@
+\section{Natural Deduction}
+
 This section explains the implementation of Natural Deduction proofs for BSML.
 Our code should still be considered \emph{Work in progress}, but already has
 useful functionality, with clear potential for future extensions and/or improvements.

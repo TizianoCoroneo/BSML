@@ -103,7 +103,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
         \label{fig:3c}
     \end{subfigure}
     \caption{}
-    \label{fig:all}
+    \label{fig:all3}
 \end{figure}
 
 \input{test/semanticTests.lhs}
@@ -127,7 +127,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
             \end{tikzpicture}%
         }
         \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:3a}
+        \label{fig:Ma}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -143,7 +143,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
             \end{tikzpicture}%
         }
         \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:3b}
+        \label{fig:Mb}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -159,7 +159,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
             \end{tikzpicture}%
         }
         \caption{$\vDash(p\vee q)$, $\nvDash [p\vee q]^+$}
-        \label{fig:3c}
+        \label{fig:Mc}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -179,10 +179,10 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
             \end{tikzpicture}%
         }
         \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:3d}
+        \label{fig:Md}
     \end{subfigure}
     \caption{}
-    \label{fig:all}
+    \label{fig:allMotive}
 \end{figure}
 \subsection{Free-Choice inference}
 The way FC-inference is now modelled, is that given a formula/statement like $\lozenge (\alpha \lor \beta)$ in $\mathrm{ML}$, we enrich it to obtain a formula $\mathrm{BSML}$:
@@ -201,10 +201,10 @@ To accurately model FC, we should then be able to infer $\lozenge \alpha \land \
 
 \input{exec/Main.lhs}
 
-\section{Natural Deduction}
+\input{lib/ND.lhs}
 
 \section{Future work}
--- Nicer user interface
+-- Nicer user interface\\
 -- Efficiency (using implicit model checking, like SMCDEL)\\
 -- Automated proof search
 
