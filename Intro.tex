@@ -52,6 +52,14 @@ The enrichment of $b \vee c$ (denoted $[b\vee c]^+$) is no longer assertable in 
 Finally then, since the only states in which the enriched disjunction holds are (1) and (2), the FC inference holds.
 
 \subsection{Our contribution}
--- What is our contribution (model checking + ND)\\
--- Why is model checking/nice important?\\
--- Why is representing ND nice?
+This report details our explicit model checker for BSML. In the last section, we create a framework for writing Natural Deduction style
+proofs for BSML in Haskell. 
+
+Developing model-checkers is useful for any logic - it helps us understand quickly whether a formula is true on a particular model (while removing any human 
+error involved in this process), and also makes it easy for the user to check the satisfiability of a list of formulas on a large list of models quickly. 
+The goal is to ensure model-checkers are accurate and efficient: while in BSML the latter criterion is hard to achieve on account of the unique 
+semantics of the logic, we have tried to ensure that the model-checker is as quick as possible while remaining precise.
+
+Representing Natural Deduction style proofs is the first step to building a functional theorem prover for the language. As with model-checkers, this makes the 
+job of anyone working in the field easier as they may now systematically verify the correctness of their proofs. Our representation of Natural Deduction is built by creating a new \verb|Proof| type, and ensuring that the only 
+way one can get from one proof to another is by following the rules of deduction outlined in \cite{Aloni2024}. 
