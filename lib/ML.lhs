@@ -1,5 +1,3 @@
-\subsection{Modal Logic}
-
 To define the \emph{pragmatic enrichment} function mentioned in the introduction,
 we define a type to represent formulas of basic Modal Logic (ML) and implement
 the standard Kripke semantics.
@@ -13,8 +11,7 @@ import Syntax
 import Semantics
 
 import Test.QuickCheck
-\end{code}
-\begin{code}
+
 -- Basic Modal Logic formulas
 data MForm
   = MProp Proposition
