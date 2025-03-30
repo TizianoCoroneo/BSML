@@ -7,7 +7,7 @@ We interpret formulas on (Kripke) models, which consist of
   \item a set of worlds $W$;
   \item a binary relation $R \subseteq W \times W$ between worlds;
   \item and a valuation $V : W \to \wp(\texttt{Prop})$ mapping a world to the propositions that hold in it.
-  \footnote{In the paper, the valuation is defined as a function $\texttt{Prop} -> \wp W$, but this is easily seen to be equivalent.}
+  \footnote{In the paper, the valuation is defined as a function $\texttt{Prop} \to \wp W$, but this is easily seen to be equivalent.}
 \end{itemize}
 A \emph{team} or \emph{state} (we will use these terms interchangably) on a model is a subset $s \subseteq W$.
 To link back to the introduction, the worlds represent information-configurations and a
@@ -102,7 +102,7 @@ teamParts s = [(t,u) | t <- ps, u <- ps, sort . nub (t ++ u) == sort s]
 Computationally however, this is incredibly expensive and will form a major
 bottleneck for the efficiency of the model checking.
 While finding such partitions is inherently exponential in complexity, we can
-still do slightly better (at least on average) than the above:
+still do better (at least on average) than the above:
 
 \begin{code}
 teamParts :: Team -> [(Team, Team)]

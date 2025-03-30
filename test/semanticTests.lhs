@@ -1,10 +1,8 @@
 
-\section{Semantic Tests}
-\label{sec:semantictests}
-
 We now use the library QuickCheck to randomly generate input for our functions
 and test some properties.
 
+\hide{
 \begin{code}
 module Main where
 
@@ -16,18 +14,20 @@ import Semantics
 import Syntax
 import Models
 \end{code}
+}
 
 
-The following uses the HSpec library to define different tests. 
+The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
-The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}. 
-The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas 
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas
 to confirm our implementation contains the expected semantics.
 
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c in Figure 1 and in the paper \cite{Aloni2024}.
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation contains the expected semantics.
 
 \begin{code}
-
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
@@ -49,28 +49,35 @@ main = hspec $ do
       (m3b, s3b) |= (Dia p `And` Dia q) `shouldBe` False
     it "Figure 3c, <>(p v q)" $
       (m3c, s3c) |= Dia (p `Or` q) `shouldBe` True
+\end{code}
 
+Below we test the tautologies that should hold for BSML logic ensuring our implementation is correct.
+Here we use QuickCheck, but we need to limit the maximal size of the arbitrary models we generate.
+This is necessary because the evaluation of support in team semantics is inherently exponential
+in complexity (see e.g. the clause for support of disjunctions).
+
+\begin{code}
   describe "Tautologies" $ modifyMaxSize (const 20) $ do
     modifyMaxSize (const 10) $ prop "box f <==> !<>!f" $
-      \(TPM m s) f -> (m::KrM,s::Team) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
-    
+      \(TPM m s) f -> (m,s) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
+
     prop "<>(p v q) <==> <>p v <>q" $
-      \(TPM m s) -> (m::KrM,s::Team) |= Dia (p `Or` q) == (m,s) |= (Dia p `Or` Dia q)
+      \(TPM m s) -> (m,s) |= Dia (p `Or` q) == (m,s) |= (Dia p `Or` Dia q)
     prop "<>(p ^ q) ==> <>p ^ <>q" $
-      \(TPM m s) -> (m::KrM,s::Team) |= Dia (p `And` q) ==> (m,s) |= (Dia p `And` Dia q)
+      \(TPM m s) -> (m,s) |= Dia (p `And` q) ==> (m,s) |= (Dia p `And` Dia q)
     modifyMaxSize (const 25) $ prop "<>p ^ <>q !==> <>(p ^ q)" $
-      expectFailure $ \(TPM m s) -> (m::KrM,s::Team) |= (Dia p `And` Dia q) ==> (m,s) |= Dia (p `And` q)
-    
+      expectFailure $ \(TPM m s) -> (m,s) |= (Dia p `And` Dia q) ==> (m,s) |= Dia (p `And` q)
+
     prop "box(p ^ q) <==> box p ^ box q" $
-      \(TPM m s) -> (m::KrM,s::Team) |= box (p `And` q) == (m,s) |= (box p `And` box q)
+      \(TPM m s) -> (m,s) |= box (p `And` q) == (m,s) |= (box p `And` box q)
     prop "box p v box q ==> box(p v q)" $
-      \(TPM m s) -> (m::KrM,s::Team) |= (box p `Or` box q) ==> (m,s) |= box (p `Or` q)
+      \(TPM m s) -> (m,s) |= (box p `Or` box q) ==> (m,s) |= box (p `Or` q)
     modifyMaxSize (const 25) $ modifyMaxSuccess (const 1000) $ prop "box(p v q) !==> box p v box q" $
-      expectFailure $ \(TPM m s) -> (m::KrM,s::Team) |= box (p `Or` q) ==> (m,s) |= (box p `Or` box q)
+      expectFailure $ \(TPM m s) -> (m,s) |= box (p `Or` q) ==> (m,s) |= (box p `Or` box q)
 
     prop "DeMorgan's Law" $
-      \(TPM m s) -> (m::KrM,s::Team) |= Neg (p `And` q)== (m,s) |= (Neg p `Or` Neg q)
-    
+      \(TPM m s) -> (m,s) |= Neg (p `And` q)== (m,s) |= (Neg p `Or` Neg q)
+
     prop "Dual-Prohibition, !<>(a v b) |= !<>a ^ !<>b" $
       \(TPM m s) -> (m, s) |= Neg (Dia (p `Or` q)) == (m,s) |= (Neg(Dia p) `And` Neg(Dia q))
     prop "strong tautology is always supported" $

@@ -21,9 +21,11 @@
 \begin{abstract}
 Bilateral State-based Modal Logic (BSML) was introduced in \cite{Aloni2022} to model Free-Choice (\textit{FC}) and related inferences which arise from speakers' distaste for
 interpretations that verify a sentence by empty configuration (\textit{neglect-zero tendency}). To preclude such empty configurations, BSML uses state-based semantics (propositions evaluated at sets of worlds rather than individual worlds) and extends basic modal logic with a pragmatic enrichment function $[]^+$ which requires supporting states to be nonempty.
-We implement an explicit model checker for BSML and use this to verify some properties, like Free-Choice inference, as described in \cite{Aloni2024}.
+We implement an explicit model checker for $\mathrm{BSML}^{\gor}$, an extension of BSML with global disjunction, and use this to verify some properties, like Free-Choice inference, as described in \cite{Aloni2024}.
+Further, we implement a type for representing Natural Deduction proofs for $\mathrm{BSML}^{\gor}$.
 \end{abstract}
 
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 \clearpage
@@ -101,8 +103,10 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
         \label{fig:3c}
     \end{subfigure}
     \caption{}
-    \label{fig:all}
+    \label{fig:all3}
 \end{figure}
+
+\input{test/semanticTests.lhs}
 
 \section{Verifying inference}
 
@@ -122,8 +126,8 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (1.5,15) rectangle (5.5,10.75);
             \end{tikzpicture}%
         }
-        \caption{$\vDash(p\vee q)$,$\vDash$}
-        \label{fig:3a}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
+        \label{fig:Ma}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -138,8 +142,8 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (-0.25,15) rectangle (4,10.5);
             \end{tikzpicture}%
         }
-        \caption{Example 3b}
-        \label{fig:3b}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
+        \label{fig:Mb}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -154,8 +158,8 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (-0.25,15) rectangle (3.75,10.75);
             \end{tikzpicture}%
         }
-        \caption{Example 3c}
-        \label{fig:3c}
+        \caption{$\vDash(p\vee q)$, $\nvDash [p\vee q]^+$}
+        \label{fig:Mc}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.23\textwidth}
@@ -174,11 +178,11 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners = 3] (-10,6.5) rectangle (-5.25,1.5);
             \end{tikzpicture}%
         }
-        \caption{Example 3d}
-        \label{fig:3d}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
+        \label{fig:Md}
     \end{subfigure}
     \caption{}
-    \label{fig:all}
+    \label{fig:allMotive}
 \end{figure}
 \subsection{Free-Choice inference}
 The way FC-inference is now modelled, is that given a formula/statement like $\lozenge (\alpha \lor \beta)$ in $\mathrm{ML}$, we enrich it to obtain a formula $\mathrm{BSML}$:
@@ -188,7 +192,7 @@ The way FC-inference is now modelled, is that given a formula/statement like $\l
 This formula more accurately represents the meaning of a sentence in linguistics, given speakers' distaste for null verification.
 To accurately model FC, we should then be able to infer $\lozenge \alpha \land \lozenge \beta$ from $[\lozenge (\alpha \lor \beta)]^+$.
 
--- Insert QuickCheck test to show this holds
+\input{test/simpletests.lhs}
 
 \input{lib/lexer.lhs}
 
@@ -197,11 +201,13 @@ To accurately model FC, we should then be able to infer $\lozenge \alpha \land \
 
 \input{exec/Main.lhs}
 
-\section{Natural Deduction}
+\input{lib/ND.lhs}
 
 \section{Future work}
--- Efficiency\\
--- Proof search
+-- Nicer user interface\\
+-- Efficiency (using implicit model checking, like SMCDEL)\\
+-- Automated proof search
+
 
 \addcontentsline{toc}{section}{Bibliography}
 \bibliographystyle{alpha}

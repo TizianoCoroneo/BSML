@@ -1,3 +1,28 @@
+\section{Natural Deduction}
+
+This section explains the implementation of Natural Deduction proofs for BSML.
+Our code should still be considered \emph{Work in progress}, but already has
+useful functionality, with clear potential for future extensions and/or improvements.
+
+Since we want users of this module to solely be able to construct proofs using
+the supplied axioms, we explicitly name the exports of this module and omit the
+constructor for the \verb|Proof|-type.
+\begin{showCode}
+module ND
+  (
+    Proof
+  , sorry
+  , assume
+
+  -- Rules
+  .
+  .
+  .
+  ) where
+\end{showCode}
+
+\hide{
+\begin{code}
 module ND
   (
     Proof
@@ -18,7 +43,7 @@ module ND
   , neNegElim
 
   -- Rules for v
-  , orIntro
+  , orIntroR
   , orWkn
   , orComm
   , orAss
@@ -52,30 +77,66 @@ module ND
   , diaGorOrConv
   , boxGorOrConv
   ) where
+\end{code}
+}
 
+To represent an ND-proof, we use the \verb|Proof|-type, which stores the conclusion
+of the proof and all of its open (non-discharged) assumptions.
+We use a \verb|Set| to represent proofs to allow easy omission of duplicates and removal (discharges) of
+assumptions.
+For the sake of simplicity, we decided not to store the entire ND-tree leading to
+a conclusion, but it would be a straightforward adaptation to make, if desired.
+
+\begin{code}
 import Syntax
 
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+-- Type for representing ND-proofs, constructor Prf is for internal use only!
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
+  deriving (Show)
 
-sorry :: Form -> Proof
-sorry = flip Prf mempty
-{-# WARNING sorry "Proof uses sorry!" #-}
+\end{code}
 
+Next, we define a function to represent making a new assumption in a proof; given any
+formula $\phi$, it returns the proof with conclusion $\phi$ and open assumptions $\{\phi\}$.
+
+\begin{code}
 assume :: Form -> Proof
 assume = Prf <*> Set.singleton
+\end{code}
 
--- Needed for checking side-conditions
+Further, we define some functions for convenience.
+Here, \verb|sorry| completely subverts our system by creating a proof for any conclusion and set of assumptions,
+but it can be useful for users as a placeholder value in proofs.
+It is similar to \verb|Lean|'s sorry, and triggers a warning anytime it is
+used.
+The \verb|hasNE| and \verb|hasGor| functions check whether a formula uses the
+\verb|NE| or \verb|Gor| constructor anywhere, which is needed for checking some
+side-conditions on ND-rules.
+Recall that \verb|hasCr| was defined in \ref{sec:Syntax_plate}.
+
+\begin{code}
+sorry :: Form -> Set Form -> Proof
+sorry = Prf
+{-# WARNING sorry "Proof uses sorry!" #-}
+
+-- Used for checking side-conditions
+
 hasNE :: Form -> Bool
 hasNE = hasCr _NE
 
 hasGor :: Form -> Bool
 hasGor = hasCr _Gor
+\end{code}
 
-
+Now, we can define all of the rules axiomatizing BSML, as proven in \cite{Aloni2024} (see Chapter 4).
+There are quite a lot of rules (32 to be exact, we implemented all of them!), so we will not show all of them here,
+but we will highlight a few to give a good idea of the implementations.
+\hide{
+\begin{code}
 -- (a) Rules for &
 
 andIntro :: Proof -> Proof -> Proof
@@ -100,7 +161,7 @@ negIntro f (Prf g ass)
 
 negElim :: Form -> Proof -> Proof -> Proof
 negElim g (Prf f ass) (Prf f' ass')
-  | (not . all isBasic) [f, f', g] = error "Cannot apply ~Elim non-basic formula!"
+  | (not . all isBasic) [f, f', g] = error "Cannot apply ~Elim to non-basic formula!"
   | f /= Neg f' && Neg f /= f'     = error "Cannot apply ~Elim, conclusions are not contradictory!"
   | otherwise                      = Prf g $ ass <> ass'
 
@@ -119,14 +180,23 @@ dmOr _ = error "Cannot apply v-De Morgan's law, conclusion is not negated disjun
 neNegElim :: Proof -> Proof
 neNegElim (Prf (Neg NE) ass) = Prf Bot ass
 neNegElim _ = error "Cannot apply ~NE-Elim, conclusion is not ~NE!"
+\end{code}
+}
 
+Take e.g. the rule $\lor\mathrm{I}$, which introduces $\phi \lor \psi$ from a proof
+of $\phi$ under the condition that $\psi$ does not contain \verb|NE|.
+This is implemented as:
+\begin{code}
 -- (c) Rules for v
 
-orIntro :: Form -> Proof -> Proof
-orIntro g (Prf f ass)
+orIntroR :: Form -> Proof -> Proof
+orIntroR g (Prf f ass)
   | hasNE g   = error "Cannot vIntro a formula containing NE!"
   | otherwise = Prf (Or f g) ass
+\end{code}
 
+\hide{
+\begin{code}
 orWkn :: Proof -> Proof
 orWkn (Prf f ass) = Prf (Or f f) ass
 
@@ -137,16 +207,27 @@ orComm _ = error "Cannot apply vCom, conclusion is not a disjunction!"
 orAss :: Proof -> Proof
 orAss (Prf (f `Or` (g `Or` h)) ass) = Prf ((f `Or` g) `Or` h) ass
 orAss _ = error "Cannot apply vAss, conclusion is not a nested disjunction!"
+\end{code}
+}
 
+For a more complicated example, we can consider $\lor\mathrm{E}$, the rule for
+disjunction-elimination:
+
+\begin{code}
 orElim :: Proof -> Proof -> Proof -> Proof
 orElim (Prf (Or f g) ass) (Prf h ass1) (Prf h' ass2)
-  | h /= h' = error "Cannot apply vElim, conclusions of latter proofs do not match!"
+  | h /= h'        = error "Cannot apply vElim, conclusions of latter proofs do not match!"
   | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged assumptions containing NE!"
-  | hasGor h = error "Cannot apply vElim, latter conclusion contains V/."
-  | otherwise = Prf h $ ass <> ass'
+  | hasGor h       = error "Cannot apply vElim, latter conclusion contains V/."
+  | otherwise      = Prf h $ ass <> ass'
   where ass' = Set.delete f ass1 <> Set.delete g ass2
 orElim _ _ _ = error "Cannot apply vElim, conclusion of first proof is not a disjunction!"
+\end{code}
+Note in particular how we use a combination of guards and pattern matching to ascertain
+whether the formulas have the correct form and that all the side-conditions are met.
 
+\hide{
+\begin{code}
 orMon :: Proof -> Proof -> Proof
 orMon (Prf (Or f g) ass) (Prf h ass1)
   | (not . all isBasic) ass' = error "Cannot apply vMon, latter proof has undischarged non-basic assumptions."
@@ -171,13 +252,26 @@ diaMon (Prf g ass) (Prf (Dia f) ass1)
   | ass `Set.isSubsetOf` Set.singleton f = Prf (Dia g) ass1
   | otherwise = error "Cannot apply <>Mon, former proof has undischarged assumptions!"
 diaMon _ _ = error "Cannot apply <>Mon, conclusion of latter proof is not of the form <>phi!"
+\end{code}
+}
 
+For the sake of completeness, we wil also show $\Box\mathrm{Mon}$, a rule involving modal operators and
+an interesting side condition:
+for every assumptions $\phi$ of the first proof, $\Box\phi$ should be the conclusion
+of one of the latter proofs.
+Also note how we use \verb|foldMap| to extract the assumptions from each of the latter
+proofs and take their union.
+
+\begin{code}
 boxMon :: Proof -> [Proof] -> Proof
 boxMon (Prf g ass) ps
   | Set.map box ass `Set.isSubsetOf` Set.fromList (map conclusion ps) =
     Prf (box g) $ foldMap assumptions ps
   | otherwise = error "Cannot apply []Mon, former proof has undischarged assumptions!"
+\end{code}
 
+\hide{
+\begin{code}
 diaBoxInter :: Proof -> Proof
 diaBoxInter (Prf (Neg (Dia f)) ass) = Prf (box (Neg f)) ass
 diaBoxInter _ = error "Cannot apply <>[]Inter,conclusion is not of form ~<>phi!"
@@ -234,3 +328,5 @@ diaGorOrConv _ = error "Cannot apply <>V/vConv, conclusion is not of correct for
 boxGorOrConv :: Proof -> Proof
 boxGorOrConv (Prf (Neg (Dia (Neg (f `Gor` g)))) ass) = Prf (box f `Or` box g) ass
 boxGorOrConv _ = error "Cannot apply []V/vConv, conclusion is not of correct form!"
+\end{code}
+}
