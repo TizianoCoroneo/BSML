@@ -82,6 +82,8 @@ To represent an ND-proof, we use the \verb|Proof|-type, which stores the conclus
 of the proof and all of its open (non-discharged) assumptions.
 We use a \verb|Set| to represent proofs to allow easy omission of duplicates and removal (discharges) of
 assumptions.
+For the sake of simplicity, we decided not to store the entire ND-tree leading to
+a conclusion, but it would be a straightforward adaptation to make, if desired.
 
 \begin{code}
 import Syntax
@@ -126,7 +128,13 @@ hasNE = hasCr _NE
 
 hasGor :: Form -> Bool
 hasGor = hasCr _Gor
+\end{code}
 
+Now, we can define all of the rules axiomatizing BSML, as proven in \cite{Aloni2024} (see Chapter 4).
+There are quite a lot of rules (32 to be exact, we implemented all of them!), so we will not show all of them here,
+but we will highlight a few to give a good idea of the implementations.
+\hide{
+\begin{code}
 -- (a) Rules for &
 
 andIntro :: Proof -> Proof -> Proof
@@ -151,7 +159,7 @@ negIntro f (Prf g ass)
 
 negElim :: Form -> Proof -> Proof -> Proof
 negElim g (Prf f ass) (Prf f' ass')
-  | (not . all isBasic) [f, f', g] = error "Cannot apply ~Elim non-basic formula!"
+  | (not . all isBasic) [f, f', g] = error "Cannot apply ~Elim to non-basic formula!"
   | f /= Neg f' && Neg f /= f'     = error "Cannot apply ~Elim, conclusions are not contradictory!"
   | otherwise                      = Prf g $ ass <> ass'
 
@@ -170,14 +178,23 @@ dmOr _ = error "Cannot apply v-De Morgan's law, conclusion is not negated disjun
 neNegElim :: Proof -> Proof
 neNegElim (Prf (Neg NE) ass) = Prf Bot ass
 neNegElim _ = error "Cannot apply ~NE-Elim, conclusion is not ~NE!"
+\end{code}
+}
 
+Take e.g. the rule $\lor\mathrm{I}$, which introduces $\phi \lor \psi$ from a proof
+of $\phi$ under the condition that $\psi$ does not contain \verb|NE|.
+This is implemented as:
+\begin{code}
 -- (c) Rules for v
 
 orIntroR :: Form -> Proof -> Proof
 orIntroR g (Prf f ass)
   | hasNE g   = error "Cannot vIntro a formula containing NE!"
   | otherwise = Prf (Or f g) ass
+\end{code}
 
+\hide{
+\begin{code}
 orWkn :: Proof -> Proof
 orWkn (Prf f ass) = Prf (Or f f) ass
 
@@ -188,16 +205,27 @@ orComm _ = error "Cannot apply vCom, conclusion is not a disjunction!"
 orAss :: Proof -> Proof
 orAss (Prf (f `Or` (g `Or` h)) ass) = Prf ((f `Or` g) `Or` h) ass
 orAss _ = error "Cannot apply vAss, conclusion is not a nested disjunction!"
+\end{code}
+}
 
+For a more complicated example, we can consider $\lor\mathrm{E}$, the rule for
+disjunction-elimination:
+
+\begin{code}
 orElim :: Proof -> Proof -> Proof -> Proof
 orElim (Prf (Or f g) ass) (Prf h ass1) (Prf h' ass2)
-  | h /= h' = error "Cannot apply vElim, conclusions of latter proofs do not match!"
+  | h /= h'        = error "Cannot apply vElim, conclusions of latter proofs do not match!"
   | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged assumptions containing NE!"
-  | hasGor h = error "Cannot apply vElim, latter conclusion contains V/."
-  | otherwise = Prf h $ ass <> ass'
+  | hasGor h       = error "Cannot apply vElim, latter conclusion contains V/."
+  | otherwise      = Prf h $ ass <> ass'
   where ass' = Set.delete f ass1 <> Set.delete g ass2
 orElim _ _ _ = error "Cannot apply vElim, conclusion of first proof is not a disjunction!"
+\end{code}
+Note in particular how we use a combination of guards and pattern matching to ascertain
+whether the formulas have the correct form and that all the side-conditions are met.
 
+\hide{
+\begin{code}
 orMon :: Proof -> Proof -> Proof
 orMon (Prf (Or f g) ass) (Prf h ass1)
   | (not . all isBasic) ass' = error "Cannot apply vMon, latter proof has undischarged non-basic assumptions."
@@ -222,13 +250,26 @@ diaMon (Prf g ass) (Prf (Dia f) ass1)
   | ass `Set.isSubsetOf` Set.singleton f = Prf (Dia g) ass1
   | otherwise = error "Cannot apply <>Mon, former proof has undischarged assumptions!"
 diaMon _ _ = error "Cannot apply <>Mon, conclusion of latter proof is not of the form <>phi!"
+\end{code}
+}
 
+For the sake of completeness, we wil also show $\Box\mathrm{Mon}$, a rule involving modal operators and
+an interesting side condition:
+for every assumptions $\phi$ of the first proof, $\Box\phi$ should be the conclusion
+of one of the latter proofs.
+Also note how we use \verb|foldMap| to extract the assumptions from each of the latter
+proofs and take their union.
+
+\begin{code}
 boxMon :: Proof -> [Proof] -> Proof
 boxMon (Prf g ass) ps
   | Set.map box ass `Set.isSubsetOf` Set.fromList (map conclusion ps) =
     Prf (box g) $ foldMap assumptions ps
   | otherwise = error "Cannot apply []Mon, former proof has undischarged assumptions!"
+\end{code}
 
+\hide{
+\begin{code}
 diaBoxInter :: Proof -> Proof
 diaBoxInter (Prf (Neg (Dia f)) ass) = Prf (box (Neg f)) ass
 diaBoxInter _ = error "Cannot apply <>[]Inter,conclusion is not of form ~<>phi!"
@@ -286,3 +327,4 @@ boxGorOrConv :: Proof -> Proof
 boxGorOrConv (Prf (Neg (Dia (Neg (f `Gor` g)))) ass) = Prf (box f `Or` box g) ass
 boxGorOrConv _ = error "Cannot apply []V/vConv, conclusion is not of correct form!"
 \end{code}
+}
