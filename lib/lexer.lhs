@@ -6,8 +6,7 @@ Below we describe our code for lexing and parsing BSML formulas.
 We use the well-known tools Alex and Happy for lexing and parsing, respectively. 
 This code is partially inspired by \cite{Katejan}. 
 
-
-we start by telling Alex how to recognize certain (series of) symbols in the string we will be parsing and turn them into the corresponding token. 
+We start by telling Alex how to recognize certain (series of) symbols in the string we will be parsing and turn them into the corresponding token. 
 These tokens are symbols that are assigned some meaning while a string is being parsed. 
 Our set of tokens are defined in a separate file, \verb|Token.hs|, which is omitted here since it is utterly uninspiring. 
 \begin{lstlisting}[mathescape = False]

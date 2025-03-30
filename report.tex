@@ -25,6 +25,7 @@ We implement an explicit model checker for $\mathrm{BSML}^{\gor}$, an extension 
 Further, we implement a type for representing Natural Deduction proofs for $\mathrm{BSML}^{\gor}$.
 \end{abstract}
 
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 \clearpage
@@ -105,6 +106,8 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
     \label{fig:all}
 \end{figure}
 
+\input{test/semanticTests.lhs}
+
 \section{Verifying inference}
 
 \subsection{Pragmatic enrichment}
@@ -123,7 +126,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (1.5,15) rectangle (5.5,10.75);
             \end{tikzpicture}%
         }
-        \caption{$\vDash(p\vee q)$,$\vDash$}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
         \label{fig:3a}
     \end{subfigure}
     \hfill
@@ -139,7 +142,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (-0.25,15) rectangle (4,10.5);
             \end{tikzpicture}%
         }
-        \caption{Example 3b}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
         \label{fig:3b}
     \end{subfigure}
     \hfill
@@ -155,7 +158,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners=3.0] (-0.25,15) rectangle (3.75,10.75);
             \end{tikzpicture}%
         }
-        \caption{Example 3c}
+        \caption{$\vDash(p\vee q)$, $\nvDash [p\vee q]^+$}
         \label{fig:3c}
     \end{subfigure}
     \hfill
@@ -175,7 +178,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
                 \draw [rounded corners = 3] (-10,6.5) rectangle (-5.25,1.5);
             \end{tikzpicture}%
         }
-        \caption{Example 3d}
+        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
         \label{fig:3d}
     \end{subfigure}
     \caption{}
@@ -189,7 +192,7 @@ The way FC-inference is now modelled, is that given a formula/statement like $\l
 This formula more accurately represents the meaning of a sentence in linguistics, given speakers' distaste for null verification.
 To accurately model FC, we should then be able to infer $\lozenge \alpha \land \lozenge \beta$ from $[\lozenge (\alpha \lor \beta)]^+$.
 
-
+\input{test/simpletests.lhs}
 
 \input{lib/lexer.lhs}
 

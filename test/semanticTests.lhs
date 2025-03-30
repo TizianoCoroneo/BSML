@@ -1,11 +1,8 @@
 
-\section{Semantic Tests}
-\label{sec:semantictests}
-
 We now use the library QuickCheck to randomly generate input for our functions
 and test some properties.
 
-\begin{code}
+\hide{\begin{code}
 module Main where
 
 import Test.Hspec ( hspec, describe, it, shouldBe )
@@ -15,7 +12,7 @@ import Test.QuickCheck
 import Semantics
 import Syntax
 import Models
-\end{code}
+\end{code}}
 
 
 The following uses the HSpec library to define different tests.
@@ -25,9 +22,10 @@ The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c 
 The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas
 to confirm our implementation contains the expected semantics.
 
+The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c in Figure 1 and in the paper \cite{Aloni2024}. 
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation contains the expected semantics.
 
 \begin{code}
-
 main :: IO ()
 main = hspec $ do
   describe "Figure 3" $ do
@@ -49,7 +47,14 @@ main = hspec $ do
       (m3b, s3b) |= (Dia p `And` Dia q) `shouldBe` False
     it "Figure 3c, <>(p v q)" $
       (m3c, s3c) |= Dia (p `Or` q) `shouldBe` True
+\end{code}
 
+Below we test the tautologies that should hold for BSML logic ensuring our implementation is correct.
+Here we use QuickCheck, but we need to limit the maximal size of the arbitrary models we generate.
+This is necessary because the evaluation of support in team semantics is inherently exponential 
+in complexity (see e.g. the clause for support of disjunctions).
+
+\begin{code}
   describe "Tautologies" $ modifyMaxSize (const 20) $ do
     modifyMaxSize (const 10) $ prop "box f <==> !<>!f" $
       \(TPM m s) f -> (m,s) |= box (f::Form) == (m,s) |= Neg(Dia (Neg f))
