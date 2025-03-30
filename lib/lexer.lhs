@@ -1,4 +1,6 @@
-\section{Parsing/Lexing}
+\section{Lexing and Parsing BSML Formulae}
+
+\subsection{Lexing}
 
 Below we describe our code for lexing and parsing BSML formulas.
 We use the well-known tools Alex and Happy for lexing and parsing, respectively. 
