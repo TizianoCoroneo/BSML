@@ -1,4 +1,25 @@
+This section explains the implementation of Natural Deduction proofs for BSML.
+Our code should still be considered \emph{Work in progress}, but already has
+useful functionality, with clear potential for future extensions and/or improvements.
 
+Since we want users of this module to solely be able to construct proofs using
+the supplied axioms, we explicitly name the exports of this module and omit the
+constructor for the \verb|Proof|-type.
+\begin{showCode}
+module ND
+  (
+    Proof
+  , sorry
+  , assume
+
+  -- Rules
+  .
+  .
+  .
+  ) where
+\end{showCode}
+
+\hide{
 \begin{code}
 module ND
   (
@@ -54,24 +75,52 @@ module ND
   , diaGorOrConv
   , boxGorOrConv
   ) where
+\end{code}
+}
 
+To represent an ND-proof, we use the \verb|Proof|-type, which stores the conclusion
+of the proof and all of its open (non-discharged) assumptions.
+We use a \verb|Set| to represent proofs to allow easy omission of duplicates and removal (discharges) of
+assumptions.
+
+\begin{code}
 import Syntax
 
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+-- Type for representing ND-proofs, constructor Prf is for internal use only!
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
   deriving (Show)
 
+\end{code}
+
+Next, we define a function to represent making a new assumption in a proof; given any
+formula $\phi$, it returns the proof with conclusion $\phi$ and open assumptions $\{\phi\}$.
+
+\begin{code}
+assume :: Form -> Proof
+assume = Prf <*> Set.singleton
+\end{code}
+
+Further, we define some functions for convenience.
+Here, \verb|sorry| completely subverts our system by creating a proof for any conclusion and set of assumptions,
+but it can be useful for users as a placeholder value in proofs.
+It is similar to \verb|Lean|'s sorry, and triggers a warning anytime it is
+used.
+The \verb|hasNE| and \verb|hasGor| functions check whether a formula uses the
+\verb|NE| or \verb|Gor| constructor anywhere, which is needed for checking some
+side-conditions on ND-rules.
+Recall that \verb|hasCr| was defined in \ref{sec:Syntax_plate}.
+
+\begin{code}
 sorry :: Form -> Set Form -> Proof
 sorry = Prf
 {-# WARNING sorry "Proof uses sorry!" #-}
 
-assume :: Form -> Proof
-assume = Prf <*> Set.singleton
+-- Used for checking side-conditions
 
--- Needed for checking side-conditions
 hasNE :: Form -> Bool
 hasNE = hasCr _NE
 

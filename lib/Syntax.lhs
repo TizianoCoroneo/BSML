@@ -159,6 +159,7 @@ simplifying counterexamples when/if it finds any.
 \end{code}
 
 \subsubsection{Boilerplate for subformulas}
+\label{sec:Syntax_plate}
 This section is slightly technical and can safely be skipped.
 It introduces some functions that allow us to check properties of subformulas (e.g. whether a formula contains \verb|NE| anywhere in its subformulas).
 
