@@ -1,5 +1,5 @@
 \section{Introduction}
-This section outlines the motivation for BSML by walking through a simple example from \cite{Aloni2022}. Readers interested only in the implementation can safely skip this section. 
+This section outlines the motivation for BSML by walking through a simple example from \cite{Aloni2022}. Readers interested only in the implementation can safely skip this section.
 
 \subsection{Motivating example}
 Free-Choice (\textit{FC}) inferences are instances of a disjunctive sentence (``or'') unexpectedly yielding a conjunctive reading (``and''). In the following example, a modalized disjunction (1) yields a conjunction of modals (2).
@@ -9,7 +9,7 @@ Free-Choice (\textit{FC}) inferences are instances of a disjunctive sentence (``
 \item $\lozenge b \wedge \lozenge c$ You may go to the beach \textbf{and} you may go to the cinema
 \end{enumerate}
 
-Aloni \cite{Aloni2022} posits that speakers interpret a sentence by identifying structures of reality that reflect it. Such a structure, or ``information state'', is a set of possible worlds. 
+Aloni \cite{Aloni2022} posits that speakers interpret a sentence by identifying structures of reality that reflect it. Such a structure, or ``information state'', is a set of possible worlds.
 
 In our disjunction, there are four associated worlds:
 
@@ -25,7 +25,7 @@ In our disjunction, there are four associated worlds:
 \begin{enumerate}
 \item Where state $s_1$ is the union of $W_b$ and $W_c$, $b\vee c$ is assertable since $b$ is assertable in $W_b$ and $c$ is assertable in $W_c$
 \item Where state $s_2$ is the union of $W_{bc}$ and $W_b$ (or $W_{bc}$ and $W_c$), $b\vee c$ is assertable since $b$ is assertable in $W_b$ and $c$ is assertable in $W_{bc}$
-\item Where state $s_3$ is the union of $W_b$ and the empty set (or $W_c$ and the empty set), $b\vee c$ is assertable since 
+\item Where state $s_3$ is the union of $W_b$ and the empty set (or $W_c$ and the empty set), $b\vee c$ is assertable since
 
 
 since each of the
@@ -44,7 +44,7 @@ How do we account for FC inferences then? Aloni argues pragmatically that a spea
 zero-model as one of the candidate states. Neglecting the zero model then, the FC inference would hold
 because the only states that would support $b\vee c$ would be (1) or (2). To model neglect-zero (to make
 sure that $b\vee c$ is not assertable in the zero-model), we require that to satisfy a disjunction, the state
-must be the union of two non-empty substates rather than just the union of two substates. 
+must be the union of two non-empty substates rather than just the union of two substates.
 This is modelled by enriching formulas using a \emph{pragmatic enrichment function} which conjuncts to each subformula a non-emptiness atom (\verb|NE|), which requires supporting states to be inhabited.
 
 The enrichment of $b \vee c$ (denoted $[b\vee c]^+$) is no longer assertable in a state consisting of only $W_b$
@@ -53,14 +53,17 @@ Finally then, since the only states in which the enriched disjunction holds are 
 
 \subsection{Our contribution}
 
-This report details our explicit model checker for BSML. In the last section, we create a framework for writing Natural Deduction style
-proofs for BSML in Haskell. 
+This report details our implementation of an explicit model checker for BSML.
+In the last section, we create a framework for writing Natural Deduction style
+proofs for BSML in Haskell.
 
-Developing model-checkers is useful for any logic - it helps us understand quickly whether a formula is true on a particular model (while removing any human 
-error involved in this process), and also makes it easy for the user to check the satisfiability of a list of formulas on a large list of models quickly. 
-The goal is to ensure model-checkers are accurate and efficient: while in BSML the latter criterion is hard to achieve on account of the unique 
-semantics of the logic, we have tried to ensure that the model-checker is as quick as possible while remaining precise.
+Developing model-checkers is useful for any logic - it helps us understand quickly whether a formula is true on a particular model (while removing any human
+error involved in this process), and also makes it easy for the user to check the validity of a class of formulas on a class of models quickly.
+The goal is to ensure model-checkers are accurate and efficient: while in BSML the latter criterion is hard to achieve on account of the unique
+semantics of the logic, we have tried to ensure that the model-checker is as efficient as possible while remaining sound.
 
-Representing Natural Deduction style proofs is the first step to building a functional theorem prover for the language. As with model-checkers, this makes the 
-job of anyone working in the field easier as they may now systematically verify the correctness of their proofs. Our representation of Natural Deduction is built by creating a new \verb|Proof| type, and ensuring that the only 
-way one can get from one proof to another is by following the rules of deduction outlined in \cite{Aloni2024}.
+Our implementation for Natural Deduction can be used as a (quite primitive for now) interactive theorem prover for BSML.
+Representing these proofs is also the first step to potentially building a functional automated theorem prover for the language. As with model-checkers, this makes the
+job of anyone working in the field easier as they may now systematically verify the correctness of their proofs. Our representation of Natural Deduction is built by creating a new \verb|Proof| type, and ensuring that the only
+way one can get from one proof to another is by following the axiomatization of BSML outlined in \cite{Aloni2024}.
+​
