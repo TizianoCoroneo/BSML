@@ -26,7 +26,7 @@ ghci> ppProof $ exFalso $ Prop 1
 For a more involved proof, consider the following implementation of the ND-proof
 for distributivity of $\land$ over $\lor$:
 \begin{code}
--- Distributivity of And over Or: f & (g v h) ⊢ (f & g) v (f & h)
+-- Distributivity of And over Or: f & (g v h) |- (f & g) v (f & h)
 -- under the condition that f is NE-free
 andOrDistr :: Form -> Form -> Form -> Proof
 andOrDistr f g h =

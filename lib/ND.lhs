@@ -15,9 +15,7 @@ module ND
   , assume
 
   -- Rules
-  .
-  .
-  .
+  ...
   ) where
 \end{showCode}
 
@@ -187,6 +185,9 @@ dmOr _ = error "Cannot apply v-De Morgan's law, conclusion is not negated disjun
 neNegElim :: Proof -> Proof
 neNegElim (Prf (Neg NE) ass) = Prf Bot ass
 neNegElim _ = error "Cannot apply ~NE-Elim, conclusion is not ~NE!"
+
+-- (c) Rules for v
+
 \end{code}
 }
 
@@ -194,8 +195,6 @@ Take e.g. the rule $\lor\mathrm{I}$, which introduces $\phi \lor \psi$ from a pr
 of $\phi$ under the condition that $\psi$ does not contain \verb|NE|.
 This is implemented as:
 \begin{code}
--- (c) Rules for v
-
 orIntroR :: Form -> Proof -> Proof
 orIntroR g (Prf f ass)
   | hasNE g   = error "Cannot vIntro a formula containing NE!"

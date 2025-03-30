@@ -112,78 +112,7 @@ Throughout this report, we will not need to differentiate between BSML and $\mat
 
 \subsection{Pragmatic enrichment}
 \input{lib/ML.lhs}
-\begin{figure}[!h]
-    \centering
-    \begin{subfigure}[b]{0.23\textwidth}
-        \centering
-        \resizebox{\linewidth}{!}{%
-            \begin{tikzpicture}[every node/.style={font=\LARGE}]
-                \draw (2.5,13.75) circle (0.5cm) node {$w_p$};
-                \draw (4.25,13.75) circle (0.5cm) node {$w_q$};
-                \draw (2.5,11.5) circle (0.5cm) node {$w_{pq}$};
-                \draw (4.25,11.5) circle (0.5cm) node {$w_{\emptyset}$};
-                \draw [rounded corners=3.0] (1.75,14.75) rectangle (5.25,12.75);
-                \draw [rounded corners=3.0] (1.5,15) rectangle (5.5,10.75);
-            \end{tikzpicture}%
-        }
-        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:Ma}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.23\textwidth}
-        \centering
-        \resizebox{\linewidth}{!}{%
-            \begin{tikzpicture}[every node/.style={font=\LARGE}]
-                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
-                \draw (3,14.25) circle (0.5cm) node {$w_q$};
-                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
-                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
-                \draw [rounded corners=3.0] (0,14.75) rectangle (1.7,10.75);
-                \draw [rounded corners=3.0] (-0.25,15) rectangle (4,10.5);
-            \end{tikzpicture}%
-        }
-        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:Mb}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.23\textwidth}
-        \centering
-        \resizebox{\linewidth}{!}{%
-            \begin{tikzpicture}[every node/.style={font=\LARGE}]
-                \draw (0.75,14.25) circle (0.5cm) node {$w_p$};
-                \draw (3,14.25) circle (0.5cm) node {$w_q$};
-                \draw (0.75,11.75) circle (0.5cm) node {$w_{pq}$};
-                \draw (3,11.75) circle (0.5cm) node {$w_{\emptyset}$};
-                \draw [rounded corners=3.0] (2,14.75) rectangle (3.5,13.5);
-                \draw [rounded corners=3.0] (-0.25,15) rectangle (3.75,10.75);
-            \end{tikzpicture}%
-        }
-        \caption{$\vDash(p\vee q)$, $\nvDash [p\vee q]^+$}
-        \label{fig:Mc}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.23\textwidth}
-        \centering
-        \resizebox{\linewidth}{!}{%
-            \begin{tikzpicture}[every node/.style={font=\LARGE}]
-                \draw  (-8.75,5) circle (0.75cm) node {\LARGE $w_a$} ;
-                \draw  (-8.75,2.75) circle (0.75cm) node {\LARGE $w_b$} ;
-                \draw  (-6.25,5.5) circle (0.75cm) node {\LARGE $w_{ab}$} ;
-                \draw  (-6.5,2.75) circle (0.75cm) node {\LARGE $w_{\emptyset}$} ;
-                \draw [short] (-9.75,5.5) -- (-9.75,1.75);
-                \draw [short] (-9.75,1.75) -- (-6,1.75);
-                \draw [short] (-6,1.75) .. controls (-5.5,1.75) and (-5,2.75) .. (-6,3.75);
-                \draw [short] (-6,3.75) -- (-8,5.75);
-                \draw [short] (-9.75,5.5) .. controls (-9.5,6.25) and (-8.5,6.25) .. (-8,5.75);
-                \draw [rounded corners = 3] (-10,6.5) rectangle (-5.25,1.5);
-            \end{tikzpicture}%
-        }
-        \caption{$\vDash(p\vee q)$, $\vDash [p\vee q]^+$}
-        \label{fig:Md}
-    \end{subfigure}
-    \caption{}
-    \label{fig:allMotive}
-\end{figure}
+
 \subsection{Free-Choice inference}
 The way FC-inference is now modelled, is that given a formula/statement like $\lozenge (\alpha \lor \beta)$ in $\mathrm{ML}$, we enrich it to obtain a formula $\mathrm{BSML}$:
 \[
@@ -207,18 +136,16 @@ To accurately model FC, we should then be able to infer $\lozenge \alpha \land \
 
 \section{Future work}
 In the future, we would like to add an easier-to-navigate UI, which would help people interested in BSML 
-but not well-versed in Haskell use our model-checker. A symbolic model-checker would 
-also be nice to have, especially if we could additionally display models to the user with \verb|graphviz|.
-Something similar to \cite{gattinger2024:software:SMCDEL} for BSML would be a wonderful goal. 
+but not well-versed in Haskell use our model-checker and be able to use our implementation of proofs as an interactive theorem prover. 
+Increasing the efficiency of the model checker, possibly by representing models implicitly rather than explicitly, as in \cite{gattinger2024:software:SMCDEL} would of course also be an improvement.
+This would allow larger classes of models and formulas to be checked in a reasonable amount of time.
 
-Among the more fascinating (and ambitious) directions for future work would be extending the Natural Deduction representation
-we have described to automate proof-search. Especially given that BSML is such a new logic, there are bound to be some fantastic results 
-within it, and having automated proof-search would be a very powerful tool with which to explore these horizons. 
+Among the more fascinating (and ambitious) directions for future work would be extending the natural deduction representation we have described, to perform automated proof-search. 
+Given that the natural deduction axiomatization is sound and complete, this would be a very powerful tool with which to explore these logics.
 
 Until then, we hope you have enjoyed using our model-checker as much as we loved making it! Special thanks 
 to Maria for her wonderful paper, and to Malvin for providing an environment where we could explore and learn 
-something rather wonderful and exciting - it was a joy to work on the project, and we hope that it is a meaningful contribution 
-to a fascinating field of study. 
+something rather wonderful and exciting - it was a joy to work on the project, and we hope that it is a meaningful contribution to a fascinating field of study. 
 
 \addcontentsline{toc}{section}{Bibliography}
 \bibliographystyle{alpha}

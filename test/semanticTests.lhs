@@ -20,12 +20,8 @@ import Models
 The following uses the HSpec library to define different tests.
 We use a mix of QuickCheck and specific inputs, depending on what we are testing for.
 
-The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c \cite{Aloni2024}.
-The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas
-to confirm our implementation contains the expected semantics.
-
-The "Figure 3" section corresponds to the three examples labeled 3a, 3b, and 3c in Figure 1 and in the paper \cite{Aloni2024}.
-The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation contains the expected semantics.
+The "Figure 3" section corresponds to Figure 3 in \cite{Aloni2024}.
+The paper gives a couple formulas per example to illustrate the semantics of BSML. We test each of these formulas to confirm our implementation reflects the expected semantics.
 
 \begin{code}
 main :: IO ()
