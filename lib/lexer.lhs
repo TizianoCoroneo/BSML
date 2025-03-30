@@ -1,12 +1,13 @@
-\section{Lexer}
+\section{Lexing and Parsing BSML Formulae}
+
+\subsection{Lexing}
 
 Below we describe a brief code for a lexer we built for BSML formulae. The lexer
 was built to utilise the alex lexing tool mentioned in class.
 
-We note that this code is heavily based on the code of Katejan Dvoracek,
+We note that this code is heavily based on the code of Katejan Dvoracek \cite{KD},
 who built a Natural Deduction Prover, and used within it a lexer running on
-Alex, and a parser running on Happy. You can find the PDF for the project \href{https://canvas.uva.nl/courses/49699/assignments/559003?module_item_id=2279238}{here.}
-Thanks a bunch Katejan!
+Alex, and a parser running on Happy. The reader may access Katejan's work \href{https://canvas.uva.nl/courses/49699/assignments/559003?module_item_id=2279238}{here.}
 
 \begin{lstlisting}[mathescape = False]
 {

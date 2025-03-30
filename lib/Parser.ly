@@ -1,4 +1,4 @@
-\section{Parser}
+\subsection{Parsing}
 
 We now take a look at the code for the parser, which works using Happy. As with the
 lexer, the code is inspired by Katejan Dvoracek's work for a lexer and parser for Natural Deductions.
