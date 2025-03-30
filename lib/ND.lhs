@@ -1,3 +1,5 @@
+
+\begin{code}
 module ND
   (
     Proof
@@ -234,3 +236,4 @@ diaGorOrConv _ = error "Cannot apply <>V/vConv, conclusion is not of correct for
 boxGorOrConv :: Proof -> Proof
 boxGorOrConv (Prf (Neg (Dia (Neg (f `Gor` g)))) ass) = Prf (box f `Or` box g) ass
 boxGorOrConv _ = error "Cannot apply []V/vConv, conclusion is not of correct form!"
+\end{code}
