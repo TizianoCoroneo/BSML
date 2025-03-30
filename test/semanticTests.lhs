@@ -48,8 +48,8 @@ main = hspec $ do
 \end{code}
 
 Below we test the tautologies that should hold for BSML logic ensuring our implementation is correct.
-Here we use QuickCheck, but we need to limit the maximal size of the arbitrary models we generate.
-This is necessary because the evaluation of support in team semantics is inherently exponential
+Here we use QuickCheck, but we limit the maximal size of the arbitrary models we generate.
+This is needed to keep the tests running quickly because the evaluation of support in team semantics is inherently exponential
 in complexity (see e.g. the clause for support of disjunctions).
 
 \begin{code}
@@ -70,7 +70,10 @@ in complexity (see e.g. the clause for support of disjunctions).
       \(TPM m s) -> (m,s) |= (box p `Or` box q) ==> (m,s) |= box (p `Or` q)
     modifyMaxSize (const 25) $ modifyMaxSuccess (const 1000) $ prop "box(p v q) !==> box p v box q" $
       expectFailure $ \(TPM m s) -> (m,s) |= box (p `Or` q) ==> (m,s) |= (box p `Or` box q)
-
+\end{code}
+The module contains even more tests that are omitted here due to space constraints.
+\hide{
+\begin{code}
     prop "DeMorgan's Law" $
       \(TPM m s) -> (m,s) |= Neg (p `And` q)== (m,s) |= (Neg p `Or` Neg q)
 
@@ -90,3 +93,4 @@ in complexity (see e.g. the clause for support of disjunctions).
         p = Prop 1
         q = Prop 2
 \end{code}
+}
