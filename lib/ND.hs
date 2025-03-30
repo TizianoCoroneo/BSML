@@ -18,7 +18,7 @@ module ND
   , neNegElim
 
   -- Rules for v
-  , orIntro
+  , orIntroR
   , orWkn
   , orComm
   , orAss
@@ -60,9 +60,10 @@ import qualified Data.Set as Set
 
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
+  deriving (Show)
 
-sorry :: Form -> Proof
-sorry = flip Prf mempty
+sorry :: Form -> Set Form -> Proof
+sorry = Prf
 {-# WARNING sorry "Proof uses sorry!" #-}
 
 assume :: Form -> Proof
@@ -74,7 +75,6 @@ hasNE = hasCr _NE
 
 hasGor :: Form -> Bool
 hasGor = hasCr _Gor
-
 
 -- (a) Rules for &
 
@@ -122,8 +122,8 @@ neNegElim _ = error "Cannot apply ~NE-Elim, conclusion is not ~NE!"
 
 -- (c) Rules for v
 
-orIntro :: Form -> Proof -> Proof
-orIntro g (Prf f ass)
+orIntroR :: Form -> Proof -> Proof
+orIntroR g (Prf f ass)
   | hasNE g   = error "Cannot vIntro a formula containing NE!"
   | otherwise = Prf (Or f g) ass
 
