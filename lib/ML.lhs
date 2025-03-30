@@ -1,4 +1,4 @@
-\subsubsection{Modal Logic}
+\subsection{Modal Logic}
 
 To define the \emph{pragmatic enrichment} function mentioned in the introduction,
 we define a type to represent formulas of basic Modal Logic (ML) and implement
