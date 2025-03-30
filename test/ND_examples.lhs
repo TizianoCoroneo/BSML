@@ -20,7 +20,7 @@ One of the drawbacks of our language is that the type signature of proofs is
 not very illuminating as to their content. However, note that the information can
 be retrieved by inspecting the proof:
 \begin{verbatim}
-> ppProof $ exFalso $ Prop 1
+ghci> ppProof $ exFalso $ Prop 1
 "(_|_ & NE) |- 1"
 \end{verbatim}
 For a more involved proof, consider the following implementation of the ND-proof
