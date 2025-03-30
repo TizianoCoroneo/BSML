@@ -34,10 +34,10 @@ Further, we implement a type for representing Natural Deduction proofs for $\mat
 
 \section{Model checking BSML}\label{sec:BSML}
 
-This section describes the implementation of the explicit model checker for BSML. 
-More precisely, we will focus on $\mathrm{BSML}^{\gor}$, an extension of BSML with so-called \emph{global disjunction}. 
-This extension was not chosen for conceptual reasons, but merely to make the implementation of Natural Deduction more palatable, as we will see later. 
-Throughout this report, we will not need to differentiate between BSML and $\mathrm{BSML}^{\gor}$, so we will be somewhat sloppy and simply write BSML for our language. 
+This section describes the implementation of the explicit model checker for BSML.
+More precisely, we will focus on $\mathrm{BSML}^{\gor}$, an extension of BSML with so-called \emph{global disjunction}.
+This extension was not chosen for conceptual reasons, but merely to make the implementation of Natural Deduction more palatable, as we will see later.
+Throughout this report, we will not need to differentiate between BSML and $\mathrm{BSML}^{\gor}$, so we will be somewhat sloppy and simply write BSML for our language.
 
 
 \input{lib/Syntax.lhs}
@@ -202,6 +202,8 @@ To accurately model FC, we should then be able to infer $\lozenge \alpha \land \
 \input{exec/Main.lhs}
 
 \input{lib/ND.lhs}
+
+\input{test/ND_examples.lhs}
 
 \section{Future work}
 In the future, we would like to add an easier-to-navigate UI, which would help people interested in BSML 

@@ -26,6 +26,7 @@ module ND
 module ND
   (
     Proof
+  , ppProof
   , sorry
   , assume
 
@@ -90,6 +91,7 @@ a conclusion, but it would be a straightforward adaptation to make, if desired.
 \begin{code}
 import Syntax
 
+import Data.List
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -97,6 +99,11 @@ import qualified Data.Set as Set
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
   deriving (Show)
+
+-- Pretty printing for proofs
+ppProof :: Proof -> String
+ppProof (Prf f fs) = intercalate ", " ss ++ " |- " ++ ppForm f
+  where ss = ppForm <$> Set.toList fs
 
 \end{code}
 
