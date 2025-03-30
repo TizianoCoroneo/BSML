@@ -1,3 +1,4 @@
+\subsection{Parsing}
 
 We now take a look at the code for the parser, which works using Happy.
 We first import the modules, including \verb|Lexer|, that we require to run the parser.
@@ -77,7 +78,7 @@ regular precedence rules, and hence need to be accounted for.
 > | '(' Form GDIS Form ')' { Gor $2 $4}
 \end{code}
 
-Next, we define error messages for our parser, as in \cite{Katejan}
+Next, we define error messages for our parser, as in \cite{Katejan}.
 These error messages describe where the error occurs exactly in the string, and why Happy failed
 to parse it.
 
@@ -126,4 +127,3 @@ since parser might fail (on invalid input).
 >
 > }
 \end{code}
-
