@@ -1,3 +1,26 @@
+This section explains the implementation of Natural Deduction proofs for BSML.
+Our code should still be considered \emph{Work in progress}, but already has
+useful functionality, with clear potential for future extensions and/or improvements.
+
+Since we want users of this module to solely be able to construct proofs using
+the supplied axioms, we explicitly name the exports of this module and omit the
+constructor for the \verb|Proof|-type.
+\begin{showCode}
+module ND
+  (
+    Proof
+  , sorry
+  , assume
+
+  -- Rules
+  .
+  .
+  .
+  ) where
+\end{showCode}
+
+\hide{
+\begin{code}
 module ND
   (
     Proof
@@ -18,7 +41,7 @@ module ND
   , neNegElim
 
   -- Rules for v
-  , orIntro
+  , orIntroR
   , orWkn
   , orComm
   , orAss
@@ -52,29 +75,57 @@ module ND
   , diaGorOrConv
   , boxGorOrConv
   ) where
+\end{code}
+}
 
+To represent an ND-proof, we use the \verb|Proof|-type, which stores the conclusion
+of the proof and all of its open (non-discharged) assumptions.
+We use a \verb|Set| to represent proofs to allow easy omission of duplicates and removal (discharges) of
+assumptions.
+
+\begin{code}
 import Syntax
 
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+-- Type for representing ND-proofs, constructor Prf is for internal use only!
 data Proof = Prf {conclusion :: Form,
                   assumptions :: Set Form}
+  deriving (Show)
 
-sorry :: Form -> Proof
-sorry = flip Prf mempty
-{-# WARNING sorry "Proof uses sorry!" #-}
+\end{code}
 
+Next, we define a function to represent making a new assumption in a proof; given any
+formula $\phi$, it returns the proof with conclusion $\phi$ and open assumptions $\{\phi\}$.
+
+\begin{code}
 assume :: Form -> Proof
 assume = Prf <*> Set.singleton
+\end{code}
 
--- Needed for checking side-conditions
+Further, we define some functions for convenience.
+Here, \verb|sorry| completely subverts our system by creating a proof for any conclusion and set of assumptions,
+but it can be useful for users as a placeholder value in proofs.
+It is similar to \verb|Lean|'s sorry, and triggers a warning anytime it is
+used.
+The \verb|hasNE| and \verb|hasGor| functions check whether a formula uses the
+\verb|NE| or \verb|Gor| constructor anywhere, which is needed for checking some
+side-conditions on ND-rules.
+Recall that \verb|hasCr| was defined in \ref{sec:Syntax_plate}.
+
+\begin{code}
+sorry :: Form -> Set Form -> Proof
+sorry = Prf
+{-# WARNING sorry "Proof uses sorry!" #-}
+
+-- Used for checking side-conditions
+
 hasNE :: Form -> Bool
 hasNE = hasCr _NE
 
 hasGor :: Form -> Bool
 hasGor = hasCr _Gor
-
 
 -- (a) Rules for &
 
@@ -122,8 +173,8 @@ neNegElim _ = error "Cannot apply ~NE-Elim, conclusion is not ~NE!"
 
 -- (c) Rules for v
 
-orIntro :: Form -> Proof -> Proof
-orIntro g (Prf f ass)
+orIntroR :: Form -> Proof -> Proof
+orIntroR g (Prf f ass)
   | hasNE g   = error "Cannot vIntro a formula containing NE!"
   | otherwise = Prf (Or f g) ass
 
@@ -234,3 +285,4 @@ diaGorOrConv _ = error "Cannot apply <>V/vConv, conclusion is not of correct for
 boxGorOrConv :: Proof -> Proof
 boxGorOrConv (Prf (Neg (Dia (Neg (f `Gor` g)))) ass) = Prf (box f `Or` box g) ass
 boxGorOrConv _ = error "Cannot apply []V/vConv, conclusion is not of correct form!"
+\end{code}
