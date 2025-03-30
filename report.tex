@@ -204,10 +204,19 @@ To accurately model FC, we should then be able to infer $\lozenge \alpha \land \
 \input{lib/ND.lhs}
 
 \section{Future work}
--- Nicer user interface\\
--- Efficiency (using implicit model checking, like SMCDEL)\\
--- Automated proof search
+In the future, we would like to add an easier-to-navigate UI, which would help people interested in BSML 
+but not well-versed in Haskell use our model-checker. A symbolic model-checker would 
+also be nice to have, especially if we could additionally display models to the user with \verb|graphviz|.
+Something similar to \cite{gattinger2024:software:SMCDEL} for BSML would be a wonderful goal. 
 
+Among the more fascinating (and ambitious) directions for future work would be extending the Natural Deduction representation
+we have described to automate proof-search. Especially given that BSML is such a new logic, there are bound to be some fantastic results 
+within it, and having automated proof-search would be a very powerful tool with which to explore these horizons. 
+
+Until then, we hope you have enjoyed using our model-checker as much as we loved making it! Special thanks 
+to Maria for her wonderful paper, and to Malvin for providing an environment where we could explore and learn 
+something rather wonderful and exciting - it was a joy to work on the project, and we hope that it is a meaningful contribution 
+to a fascinating field of study. 
 
 \addcontentsline{toc}{section}{Bibliography}
 \bibliographystyle{alpha}
