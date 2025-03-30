@@ -1,13 +1,12 @@
 \subsection{Parsing}
 
-We now take a look at the code for the parser, which works using Happy. As with the
-lexer, the code is inspired by Katejan Dvoracek's work for a lexer and parser for Natural Deductions.
-
-We first import the modules that we require to run the parser.
+We now take a look at the code for the parser, which works using Happy.
+We first import the modules, including \verb|Lexer|, that we require to run the parser.
 
 \begin{code}
 > {
 > module Parser where
+>
 > import Data.Char
 > import Token
 > import Lexer
@@ -19,7 +18,7 @@ We first import the modules that we require to run the parser.
 \end{code}
 
 Below, we describe the tokens that Happy needs to keep track of while
-reading the string. These tokens were described in the module Lexer.
+reading the string. These tokens are congruent with those in the module Lexer.
 
 \begin{code}
 
@@ -45,7 +44,7 @@ We describe also the binding hierarchy for binary operators in our language.
 The order of precedence is described by listing operators from weakest to strongest,
 as evidenced below. Note that the binding for all unary operators is stronger than the
 binding for binary operators, and unary operators operate at the same binding strength.
-This behaviour keeps in line with the way we would like to parse formulae in our language.
+This behaviour keeps in line with the way we would like to parse formulas in our language.
 
 \begin{code}
 > %left OR
@@ -55,8 +54,8 @@ This behaviour keeps in line with the way we would like to parse formulae in our
 > %%
 \end{code}
 
-We now detail two different types of formulae - bracketed formulae and
-non-bracketed formulae. The reasoning for the distinction is rather simple -
+We now detail two different types of formulas - bracketed formulas and
+non-bracketed formulas. The reasoning for the distinction is rather simple -
 the presence of parentheses around a formula requires that any operations within the
 parentheses need to be given priority over operations outside of them. This may break
 regular precedence rules, and hence need to be accounted for.
@@ -79,8 +78,8 @@ regular precedence rules, and hence need to be accounted for.
 > | '(' Form GDIS Form ')' { Gor $2 $4}
 \end{code}
 
-Next, we outline error messages for our parser. These error messages (very helpfully and wonderfully
-described by Katejan) describe where the error occurs exactly in the string, and why Happy failed
+Next, we define error messages for our parser, as in \cite{Katejan}.
+These error messages describe where the error occurs exactly in the string, and why Happy failed
 to parse it.
 
 \begin{code}
@@ -117,7 +116,7 @@ to parse it.
 Finally, we describe the actual parsing function itself, called \texttt{parseFormula}. Upon
 running \texttt{happy Parser.ly}, we get a Haskell file \texttt{Parser.hs} which contains
 the parseFormula function. The output for parseFormula is of type \texttt{Either ParseError Form},
-so we know that the user has an appropriate input when they receive an output prefixed by the constructor \texttt{Left}.
+since parser might fail (on invalid input).
 
 \begin{code}
 > parseFormula :: String -> ParseResult Form
@@ -128,4 +127,3 @@ so we know that the user has an appropriate input when they receive an output pr
 >
 > }
 \end{code}
-

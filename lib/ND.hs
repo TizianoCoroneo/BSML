@@ -1,25 +1,80 @@
-module ND where
+module ND
+  (
+    Proof
+  , sorry
+  , assume
+
+  -- Rules for &
+  , andIntro
+  , andElimL
+  , andElimR
+
+  -- Rules for ~
+  , negIntro
+  , negElim
+  , negnegElim
+  , dmAnd
+  , dmOr
+  , neNegElim
+
+  -- Rules for v
+  , orIntro
+  , orWkn
+  , orComm
+  , orAss
+  , orElim
+  , orMon
+
+  -- Rules for _|_ and NE
+  , botElim
+  , botbotCtr
+
+  -- Basic modal rules
+  , diaMon
+  , boxMon
+  , diaBoxInter
+
+  -- Rules governing the interaction of the modalities and connectives
+  , diaSep
+  , diaJoin
+  , boxInst
+  , boxDiaJoin
+
+  -- Propositional rules involving V/
+  , gorIntroL
+  , gorIntroR
+  , gorElim
+  , orGorDistr
+  , dmGor
+  , neIntro
+
+  -- Modal rules for V/
+  , diaGorOrConv
+  , boxGorOrConv
+  ) where
 
 import Syntax
 
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+data Proof = Prf {conclusion :: Form,
+                  assumptions :: Set Form}
+
+sorry :: Form -> Proof
+sorry = flip Prf mempty
+{-# WARNING sorry "Proof uses sorry!" #-}
+
+assume :: Form -> Proof
+assume = Prf <*> Set.singleton
+
+-- Needed for checking side-conditions
 hasNE :: Form -> Bool
 hasNE = hasCr _NE
 
 hasGor :: Form -> Bool
 hasGor = hasCr _Gor
 
-data Proof = Prf {conclusion :: Form,
-                  assumptions :: Set Form}
-
-sorry :: Form -> Proof
-sorry = flip Prf Set.empty
-{-# WARNING sorry "Proof uses sorry!" #-}
-
-assume :: Form -> Proof
-assume = Prf <*> Set.singleton
 
 -- (a) Rules for &
 
@@ -86,7 +141,8 @@ orAss _ = error "Cannot apply vAss, conclusion is not a nested disjunction!"
 orElim :: Proof -> Proof -> Proof -> Proof
 orElim (Prf (Or f g) ass) (Prf h ass1) (Prf h' ass2)
   | h /= h' = error "Cannot apply vElim, conclusions of latter proofs do not match!"
-  | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged non-basic assumptions."
+  | any hasNE ass' = error "Cannot apply vElim, latter proofs have undischarged assumptions containing NE!"
+  | hasGor h = error "Cannot apply vElim, latter conclusion contains V/."
   | otherwise = Prf h $ ass <> ass'
   where ass' = Set.delete f ass1 <> Set.delete g ass2
 orElim _ _ _ = error "Cannot apply vElim, conclusion of first proof is not a disjunction!"
@@ -123,46 +179,58 @@ boxMon (Prf g ass) ps
   | otherwise = error "Cannot apply []Mon, former proof has undischarged assumptions!"
 
 diaBoxInter :: Proof -> Proof
-diaBoxInter = undefined
+diaBoxInter (Prf (Neg (Dia f)) ass) = Prf (box (Neg f)) ass
+diaBoxInter _ = error "Cannot apply <>[]Inter,conclusion is not of form ~<>phi!"
 
 -- (f) Rules governing the interaction of the modalities and connectives
 
 diaSep :: Proof -> Proof
-diaSep = undefined
+diaSep (Prf (Dia (_ `Or` (g `Or` NE))) ass) = Prf (Dia g) ass
+diaSep _ = error "Cannot apply <>Sep, conclusion is not of correct form!"
 
 diaJoin :: Proof -> Proof -> Proof
-diaJoin = undefined
+diaJoin (Prf (Dia f) ass1) (Prf (Dia g) ass2) = Prf (Dia (f `Or` g)) $ ass1 <> ass2
+diaJoin _ _ = error "Cannot apply <>Join, one of the conclusion is not of the form <>phi!"
 
 boxInst :: Proof -> Proof
-boxInst = undefined
+boxInst (Prf (Neg (Dia (Neg (f `And` NE)))) ass) = Prf (Dia f) ass
+boxInst _ = error "Cannot apply []Inst, conclusion is of correct form!"
 
 boxDiaJoin :: Proof -> Proof -> Proof
-boxDiaJoin = undefined
+boxDiaJoin (Prf (Neg (Dia (Neg f))) ass1) (Prf (Dia g) ass2) = Prf (box (f `Or` g)) $ ass1 <> ass2
+boxDiaJoin _ _ = error "Cannot apply []<>Join, conclusions are not of correct form!"
 
--- (g) Propositional rules involving \V
+-- (g) Propositional rules involving V/
 
 gorIntroL :: Form -> Proof -> Proof
-gorIntroL = undefined
+gorIntroL g (Prf f ass) = Prf (f `Gor` g) ass
 
 gorIntroR :: Form -> Proof -> Proof
-gorIntroR = undefined
+gorIntroR g (Prf f ass) = Prf (g `Gor` f) ass
 
 gorElim :: Proof -> Proof -> Proof -> Proof
-gorElim = undefined
+gorElim (Prf (f `Gor` g) ass) (Prf h ass1) (Prf h' ass2)
+  | h /= h'   = error "Cannot apply V/Elim, conclusions of latter proofs do not match!"
+  | otherwise = Prf h $ ass <> Set.delete f ass1 <> Set.delete g ass2
+gorElim _ _ _ = error "Cannot apply V/Elim, first conclusion is not a global disjunction!"
 
 orGorDistr :: Proof -> Proof
-orGorDistr = undefined
+orGorDistr (Prf (f `Or` (g `Gor` h)) ass) = Prf ((f `Or` g) `Gor` (f `Or` h)) ass
+orGorDistr _ = error "Cannot apply vV/Distr, conclusion is not of correct form!"
 
 dmGor :: Proof -> Proof
-dmGor = undefined
+dmGor (Prf (Neg (f `Gor` g)) ass) = Prf (Neg f `And` Neg g) ass
+dmGor _ = error "Cannot apply DMV/, conclusion is not of correct form!"
 
 neIntro :: Proof
-neIntro = undefined
+neIntro = Prf (Bot `Gor` NE) mempty
 
--- (h) Modal rules for \V
+-- (h) Modal rules for V/
 
 diaGorOrConv :: Proof -> Proof
-diaGorOrConv = undefined
+diaGorOrConv (Prf (Dia (f `Gor` g)) ass) = Prf (Dia f `Or` Dia g) ass
+diaGorOrConv _ = error "Cannot apply <>V/vConv, conclusion is not of correct form!"
 
 boxGorOrConv :: Proof -> Proof
-boxGorOrConv = undefined
+boxGorOrConv (Prf (Neg (Dia (Neg (f `Gor` g)))) ass) = Prf (box f `Or` box g) ass
+boxGorOrConv _ = error "Cannot apply []V/vConv, conclusion is not of correct form!"
